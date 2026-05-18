@@ -15,6 +15,8 @@ interface Player{
     name:string
     color:string
     points:number
+    order:GuessEntry[]
+    extraPoints:number
 }
 interface MaxPointsCondition {
   type: "maxPoints";
@@ -24,10 +26,14 @@ interface MaxRoundsCondition {
   type: "maxRounds";
   rounds: number;
 }
+interface LeadPointsCondition {
+  type: "leadPoints";
+  points: number;
+}
 
 interface GameSettings {
   name: string;
-  stopCondition: MaxPointsCondition | MaxRoundsCondition;
+  stopCondition: MaxPointsCondition | MaxRoundsCondition | LeadPointsCondition;
   presentSelector: {
     type: "auto" | "audio" | "image" | "spotify";
     // the key of value in guessEntry, that holds the data players are presented with
@@ -36,18 +42,18 @@ interface GameSettings {
   orderSelector: {
     // the key of the value in guessEntry, that players have to guess and bring in order with the last guesses
     key: string;
-    dir:"asc"
+    dir: "asc";
   };
   extraGuessSelectors: {
     label: string;
     key: string;
     type: "text-loose" | "number" | "text-exact";
   }[];
-  displaySelectors:{
-    type:"image"|"text",
-    key:string,
-    label:string
-  }[]
+  displaySelectors: {
+    type: "image" | "text";
+    key: string;
+    label: string;
+  }[];
 }
 interface GuessGenerator {
   generateEntries: (
