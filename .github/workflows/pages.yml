@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+        VITE_SPOTIFY_CLIENT_ID: ${{ vars.VITE_SPOTIFY_CLIENT_ID }}
+        VITE_BASE_PATH: /chroniq/
     steps:
       - uses: actions/checkout@v4
 
@@ -37,9 +40,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-    env:
-        VITE_SPOTIFY_CLIENT_ID: ${{ vars.VITE_SPOTIFY_CLIENT_ID }}
-
   deploy:
     needs: build
     runs-on: ubuntu-latest

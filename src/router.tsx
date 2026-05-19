@@ -1759,7 +1759,7 @@ function PlayCard({
     : mode === "autoquartett"
       ? String(entry.name ?? entry.title)
       : String(entry.title ?? "Verdeckte Karte");
-  const secondary = revealed ? (mode === "image-art" ? String(entry.artist ?? "Kuenstler raten") : String(entry.artist ?? "")) : "";
+  const secondary = revealed ? (mode === "image-art" ? String(entry.artist ?? "Künstler raten") : String(entry.artist ?? "")) : "";
   const value = revealed ? entry[orderKey] : undefined;
   const isSongCard = isAudioCardMode(mode);
   const songImage = isSongCard ? getEntryImage(entry) : undefined;
@@ -2647,7 +2647,7 @@ const toRgb = converter("rgb") as (color: string) => { r: number; g: number; b: 
 
 const modeLabels: Record<GameMode, string> = {
   "spotify-generator": "Spotify-Generator",
-  "image-art": "Bild-Kuenstler",
+  "image-art": "Bild-Künstler",
   autoquartett: "Autoquartett",
   replay: "Replay",
   custom: "Custom",
@@ -2655,7 +2655,7 @@ const modeLabels: Record<GameMode, string> = {
 
 const modeDescriptions: Record<GameMode, string> = {
   "spotify-generator": "Song hören, Jahr einordnen, Titel und Künstler raten.",
-  "image-art": "Bild sehen, Jahr einsortieren und Kuenstler raten.",
+  "image-art": "Bild sehen, Jahr einsortieren und Künstler raten.",
   autoquartett: "Auto sehen, PS einsortieren, Baujahr danach auflösen.",
   replay: "Karten aus einem archivierten Spiel erneut spielen.",
   custom: "Eigene CSV-Datei laden und Spalten auf Karten mappen.",

@@ -66,7 +66,7 @@ const replaySettings: GameSettings = {
 };
 
 const imageArtSettings: GameSettings = {
-  name: "Bild-Kuenstler",
+  name: "Bild-Künstler",
   mode: "image-art",
   stopCondition: { type: "maxPoints", points: 10 },
   presentSelector: {
@@ -78,7 +78,7 @@ const imageArtSettings: GameSettings = {
     dir: "asc",
   },
   extraGuessSelectors: [
-    { type: "text-loose", key: "artist", label: "Kuenstler" },
+    { type: "text-loose", key: "artist", label: "Künstler" },
   ],
   displaySelectors: [
     { label: "Bild", key: "image", type: "image" },
