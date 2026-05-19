@@ -183,7 +183,7 @@ a {
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   color: var(--foreground);
   display: inline-flex;
-  height: 34px;
+  height: 25.2px;
   justify-content: center;
   transition:
     background 0.18s ease,
@@ -1754,9 +1754,10 @@ input[type="color"] {
 }
 
 .history-item {
-  background: #f7f4ed;
-  border: 1px solid #ded5c6;
+  background: color-mix(in srgb, var(--card-muted) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 8px;
+  color: var(--foreground);
   padding: 14px;
 }
 
@@ -2516,8 +2517,11 @@ input[type="color"] {
 }
 
 .history-scores span {
+  background: color-mix(in srgb, var(--card) 54%, transparent);
   border: 1px solid;
   border-radius: 999px;
+  color: var(--foreground);
+  font-weight: 800;
   padding: 6px 10px;
 }
 

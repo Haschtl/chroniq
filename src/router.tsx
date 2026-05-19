@@ -36,7 +36,6 @@ import {
   RotateCcw,
   Settings,
   Trash2,
-  Upload,
   X,
 } from "lucide-react";
 import {
@@ -168,6 +167,11 @@ function RootLayout() {
   const translate = createTranslator(state.preferences.language);
   const isGamePage = location.pathname === "/game";
   const canFinishGame = Boolean(state.activeGame && state.activeGame.phase !== "finished");
+  useEffect(() => {
+    if (state.activeGame?.phase !== "finished") return;
+    setState(archiveFinishedGame);
+  }, [state.activeGame?.id, state.activeGame?.phase]);
+
   const finishActiveGame = () => {
     if (!state.activeGame || state.activeGame.phase === "finished") return;
     setState((current) => (current.activeGame ? { ...current, activeGame: finishGame(current.activeGame) } : current));
@@ -1145,13 +1149,7 @@ function GamePage() {
         ) : null}
 
         {game.phase === "finished" ? (
-          <FinishedGame
-            game={game}
-            onArchive={() => {
-              setState(archiveFinishedGame);
-              navigate({ to: "/history" });
-            }}
-          />
+          <FinishedGame game={game} />
         ) : null}
       </div>
     </section>
@@ -2244,19 +2242,11 @@ function TimelinePreview({
   );
 }
 
-function FinishedGame({ game, onArchive }: { game: Game; onArchive: () => void }) {
+function FinishedGame({ game }: { game: Game }) {
   const topScore = Math.max(...game.players.map((player) => player.points));
   const winners = game.players.filter((player) => player.points === topScore);
   const winnerCard = winners.flatMap((winner) => winner.timeline).at(-1);
-  useFooterActions([
-    {
-      key: "archive-game",
-      label: "In Historie ablegen",
-      icon: <Upload size={16} />,
-      variant: "primary",
-      onClick: onArchive,
-    },
-  ]);
+  useFooterActions([]);
 
   return (
     <div className="flow finished-game-flow">

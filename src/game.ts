@@ -516,7 +516,7 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     correctionClaims,
     extraGuessesCorrect,
     extraPointAwardedPlayerId: extraGuessesCorrect ? activePlayer.id : undefined,
-    message: buildResultMessage(activePlayerCorrect, challenged, challengerWasRight),
+    message: buildResultMessage(activePlayerCorrect, challenged, challengerWasRight, winningClaim?.playerId, game.players),
   };
 
   const players = game.players.map((player) => {
@@ -584,9 +584,12 @@ export const archiveFinishedGame = (state: AppState): AppState => {
     return state;
   }
 
+  if (state.history.some((entry) => entry.id === state.activeGame?.id)) {
+    return state;
+  }
+
   return {
     ...state,
-    activeGame: undefined,
     history: [toSummary(state.activeGame), ...state.history],
   };
 };
@@ -648,11 +651,20 @@ const getCorrectInsertionRange = (
   };
 };
 
-const buildResultMessage = (activePlayerCorrect: boolean, challenged: boolean, challengerWasRight = false) => {
+const buildResultMessage = (
+  activePlayerCorrect: boolean,
+  challenged: boolean,
+  challengerWasRight = false,
+  winningPlayerId?: string,
+  players: Player[] = [],
+) => {
   if (!challenged && activePlayerCorrect) return "Richtig einsortiert. Die Karte geht an das aktive Team.";
   if (!challenged) return "Nicht korrekt einsortiert. Die Karte wird abgelegt.";
   if (activePlayerCorrect) return "Die Korrektur war falsch. Die Karte bleibt beim aktiven Team.";
-  if (challengerWasRight) return "Eine Korrektur war richtig. Die Karte geht an das korrigierende Team.";
+  if (challengerWasRight) {
+    const winningPlayer = players.find((player) => player.id === winningPlayerId);
+    return `Eine Korrektur war richtig. Die Karte geht an ${winningPlayer?.name ?? "das korrigierende Team"}.`;
+  }
   return "Keine Korrektur war richtig. Die Karte wird abgelegt.";
 };
 
