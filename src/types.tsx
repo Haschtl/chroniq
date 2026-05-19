@@ -273,6 +273,7 @@ export interface SpotifyAdvancedSettings {
 export interface CustomSetupState {
   sourceUrl: string;
   rawText: string;
+  format: "auto" | "csv" | "json";
   delimiter: string;
   hasHeader: boolean;
   columns: string[];
@@ -286,6 +287,9 @@ export interface CustomSetupState {
   };
   orderLabel: string;
   extraArtistGuess: boolean;
+  cardBackKeys: string[];
+  cardFrontKeys: string[];
+  extraGuessKeys: string[];
 }
 
 export interface NewGamePlayerInput {
@@ -303,6 +307,7 @@ export interface NewGameInput {
   replaySettings?: GameSettings;
   customEntries?: GuessEntry[];
   customSettings?: GameSettings;
+  imageArtEntries?: GuessEntry[];
   autoquartettEntries?: GuessEntry[];
   spotifyEntries?: GuessEntry[];
   spotifyGeneratedCount?: number;

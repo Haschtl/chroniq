@@ -75,6 +75,7 @@ const normalizeCustomSetup = (custom: unknown) => {
     ...custom,
     sourceUrl: typeof custom.sourceUrl === "string" ? custom.sourceUrl : base.sourceUrl,
     rawText: typeof custom.rawText === "string" ? custom.rawText : base.rawText,
+    format: custom.format === "csv" || custom.format === "json" || custom.format === "auto" ? custom.format : base.format,
     delimiter: typeof custom.delimiter === "string" ? custom.delimiter : base.delimiter,
     hasHeader: typeof custom.hasHeader === "boolean" ? custom.hasHeader : base.hasHeader,
     columns: Array.isArray(custom.columns) ? custom.columns.filter((column): column is string => typeof column === "string") : base.columns,
@@ -88,6 +89,9 @@ const normalizeCustomSetup = (custom: unknown) => {
     },
     orderLabel: typeof custom.orderLabel === "string" ? custom.orderLabel : base.orderLabel,
     extraArtistGuess: typeof custom.extraArtistGuess === "boolean" ? custom.extraArtistGuess : base.extraArtistGuess,
+    cardBackKeys: Array.isArray(custom.cardBackKeys) ? custom.cardBackKeys.filter((key): key is string => typeof key === "string") : base.cardBackKeys,
+    cardFrontKeys: Array.isArray(custom.cardFrontKeys) ? custom.cardFrontKeys.filter((key): key is string => typeof key === "string") : base.cardFrontKeys,
+    extraGuessKeys: Array.isArray(custom.extraGuessKeys) ? custom.extraGuessKeys.filter((key): key is string => typeof key === "string") : base.extraGuessKeys,
   };
 };
 

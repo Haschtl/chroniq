@@ -69,13 +69,11 @@ import {
   startSpotifyAuthorization,
 } from "./spotify";
 import { resetState, setState, useAppState } from "./store";
-import { loadWikidataAutoquartettEntries } from "./wikidata";
 import {
   buildCustomEntries,
   createCustomGameSettings,
   createDefaultCustomSetup,
-  parseCsv,
-  resolveDelimiter,
+  parseCustomSource,
 } from "./lib/customCsv";
 import { getLineWaveTheme } from "./lib/theme";
 import { isExtraGuessCorrect } from "./lib/textMatch";
@@ -96,6 +94,61 @@ import type {
 } from "./types";
 
 const LineWaves = lazy(() => import("./LineWaves"));
+
+const customExampleDatasets: {
+  key: string;
+  label: string;
+  path: string;
+  mapping: CustomSetupState["mapping"];
+  orderLabel: string;
+  cardBackKeys: string[];
+  cardFrontKeys: string[];
+  extraGuessKeys: string[];
+}[] = [
+  {
+    key: "autoquartett",
+    label: "KFZ / Autoquartett",
+    path: "data/autoquartett.wikidata.json",
+    mapping: {
+      title: "model",
+      artist: "manufacturer",
+      order: "horsepower",
+      image: "image",
+      audio: "",
+    },
+    orderLabel: "PS",
+    cardBackKeys: ["image", "model", "manufacturer"],
+    cardFrontKeys: ["image", "manufacturer", "model", "horsepower", "topSpeedKmh", "year"],
+    extraGuessKeys: ["manufacturer", "model"],
+  },
+  {
+    key: "artworks",
+    label: "Berühmte Kunstwerke",
+    path: "data/artworks.wikidata.json",
+    mapping: {
+      title: "title",
+      artist: "artist",
+      order: "year",
+      image: "image",
+      audio: "",
+    },
+    orderLabel: "Jahr",
+    cardBackKeys: ["image"],
+    cardFrontKeys: ["image", "title", "artist", "year", "movement", "collection"],
+    extraGuessKeys: ["artist", "title"],
+  },
+];
+
+const builtInDatasetConfigs = {
+  "image-art": {
+    path: "data/artworks.wikidata.json",
+    mapping: customExampleDatasets[1].mapping,
+  },
+  autoquartett: {
+    path: "data/autoquartett.wikidata.json",
+    mapping: customExampleDatasets[0].mapping,
+  },
+} satisfies Record<"image-art" | "autoquartett", { path: string; mapping: CustomSetupState["mapping"] }>;
 
 interface FooterAction {
   key: string;
@@ -318,7 +371,14 @@ export function HomePage() {
   const [customSetup, setCustomSetup] = useState<CustomSetupState>(savedSetup?.custom ?? createDefaultCustomSetup());
   const [customLoadError, setCustomLoadError] = useState("");
   const [customUrlLoading, setCustomUrlLoading] = useState(false);
+  const [customUrlDialogOpen, setCustomUrlDialogOpen] = useState(false);
+  const [customExampleKey, setCustomExampleKey] = useState("");
+  const [customExampleLoading, setCustomExampleLoading] = useState(false);
   const [autoquartettLoadError, setAutoquartettLoadError] = useState("");
+  const [builtInDatasetCounts, setBuiltInDatasetCounts] = useState<Record<"image-art" | "autoquartett", number>>({
+    "image-art": 0,
+    autoquartett: 0,
+  });
   const [replayHistoryId, setReplayHistoryId] = useState(savedSetup?.replayHistoryId ?? "");
   const [cardChoiceCount, setCardChoiceCount] = useState(savedSetup?.cardChoiceCount ?? 1);
   const [gameStartLoading, setGameStartLoading] = useState(false);
@@ -338,7 +398,21 @@ export function HomePage() {
   const replayEntries = selectedReplay?.replayEntries ?? [];
   const requiredReplayMissing = mode === "replay" && replayEntries.length === 0;
   const requiredCustomMissing = mode === "custom" && customSetup.entries.length === 0;
-  const availableCardsLabel = getAvailableCardsLabel(mode, spotifySetup.entries.length, replayEntries.length, customSetup.entries.length);
+  const availableCardsLabel = getAvailableCardsLabel(
+    mode,
+    spotifySetup.entries.length,
+    replayEntries.length,
+    customSetup.entries.length,
+    builtInDatasetCounts,
+  );
+  const customParsedSummary = useMemo(() => {
+    if (!customSetup.rawText) return undefined;
+    try {
+      return parseCustomSource(customSetup);
+    } catch {
+      return undefined;
+    }
+  }, [customSetup]);
 
   const normalizedPlayers = useMemo(
     () =>
@@ -348,6 +422,24 @@ export function HomePage() {
       })),
     [players],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      loadBuiltInDataset("image-art"),
+      loadBuiltInDataset("autoquartett"),
+    ]).then(([imageArtEntries, autoquartettEntries]) => {
+      if (!cancelled) {
+        setBuiltInDatasetCounts({
+          "image-art": imageArtEntries.length,
+          autoquartett: autoquartettEntries.length,
+        });
+      }
+    }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -417,8 +509,23 @@ export function HomePage() {
   const updateCustomSetup = (patch: Partial<CustomSetupState>) => {
     setCustomSetup((current) => {
       const next = { ...current, ...patch };
-      if (patch.rawText !== undefined || patch.delimiter !== undefined || patch.hasHeader !== undefined || patch.mapping !== undefined) {
-        return buildCustomEntries(next);
+      if (
+        patch.rawText !== undefined ||
+        patch.format !== undefined ||
+        patch.delimiter !== undefined ||
+        patch.hasHeader !== undefined ||
+        patch.mapping !== undefined ||
+        patch.cardBackKeys !== undefined ||
+        patch.cardFrontKeys !== undefined ||
+        patch.extraGuessKeys !== undefined
+      ) {
+        try {
+          setCustomLoadError("");
+          return buildCustomEntries(next);
+        } catch (error) {
+          setCustomLoadError(error instanceof Error ? error.message : "Daten konnten nicht gelesen werden.");
+          return { ...next, columns: [], entries: [] };
+        }
       }
       return next;
     });
@@ -432,6 +539,7 @@ export function HomePage() {
       const response = await fetch(customSetup.sourceUrl.trim());
       if (!response.ok) throw new Error(`Datei konnte nicht geladen werden (${response.status}).`);
       updateCustomSetup({ rawText: await response.text() });
+      setCustomUrlDialogOpen(false);
     } catch (error) {
       setCustomLoadError(error instanceof Error ? error.message : "Datei konnte nicht geladen werden.");
     } finally {
@@ -444,8 +552,50 @@ export function HomePage() {
     setCustomLoadError("");
     file
       .text()
-      .then((rawText) => updateCustomSetup({ rawText }))
+      .then((rawText) => updateCustomSetup({ rawText, sourceUrl: file.name }))
       .catch(() => setCustomLoadError("Datei konnte nicht gelesen werden."));
+  };
+
+  const loadCustomClipboard = async () => {
+    setCustomLoadError("");
+    try {
+      const rawText = await navigator.clipboard.readText();
+      if (!rawText.trim()) {
+        setCustomLoadError("Zwischenablage ist leer.");
+        return;
+      }
+      updateCustomSetup({ rawText, sourceUrl: "Zwischenablage" });
+    } catch {
+      setCustomLoadError("Zwischenablage konnte nicht gelesen werden.");
+    }
+  };
+
+  const loadCustomExample = async () => {
+    const example = customExampleDatasets.find((dataset) => dataset.key === customExampleKey);
+    if (!example) return;
+    setCustomExampleLoading(true);
+    setCustomLoadError("");
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}${example.path}`);
+      if (!response.ok) throw new Error(`Beispieldaten konnten nicht geladen werden (${response.status}).`);
+      const rawText = await response.text();
+      updateCustomSetup({
+        rawText,
+        sourceUrl: example.label,
+        format: "json",
+        delimiter: "auto",
+        hasHeader: true,
+        mapping: example.mapping,
+        orderLabel: example.orderLabel,
+        cardBackKeys: example.cardBackKeys,
+        cardFrontKeys: example.cardFrontKeys,
+        extraGuessKeys: example.extraGuessKeys,
+      });
+    } catch (error) {
+      setCustomLoadError(error instanceof Error ? error.message : "Beispieldaten konnten nicht geladen werden.");
+    } finally {
+      setCustomExampleLoading(false);
+    }
   };
 
   const submit = async (event: FormEvent) => {
@@ -464,17 +614,8 @@ export function HomePage() {
               exhausted: spotifySetup.exhausted,
             };
       if (mode === "spotify-generator" && (!spotifyPool || spotifyPool.entries.length === 0)) return;
-      const autoquartettEntries =
-        mode === "autoquartett"
-          ? await loadWikidataAutoquartettEntries(80).catch((error) => {
-              setAutoquartettLoadError(
-                error instanceof Error
-                  ? `${error.message} Lokale Beispielkarten werden verwendet.`
-                  : "Wikidata konnte nicht geladen werden. Lokale Beispielkarten werden verwendet.",
-              );
-              return undefined;
-            })
-          : undefined;
+      const imageArtEntries = mode === "image-art" ? await loadBuiltInDataset("image-art") : undefined;
+      const autoquartettEntries = mode === "autoquartett" ? await loadBuiltInDataset("autoquartett") : undefined;
       const activeGame = createGame({
         gameName,
         mode,
@@ -485,6 +626,7 @@ export function HomePage() {
         replaySettings: selectedReplay?.settings,
         customEntries: customSetup.entries,
         customSettings: createCustomGameSettings(customSetup),
+        imageArtEntries,
         autoquartettEntries,
         spotifyEntries: spotifyPool?.entries,
         spotifyGeneratedCount: spotifyPool?.generatedCount,
@@ -589,44 +731,108 @@ export function HomePage() {
           ) : null}
           {mode === "custom" ? (
             <div className="custom-tools">
-              <div className="custom-source-grid">
-                <label className="field">
-                  Datei hochladen
-                  <input
-                    accept=".csv,.tsv,.txt"
-                    type="file"
-                    onChange={(event) =>
-                      loadCustomFile(event.target.files?.[0])
-                    }
-                  />
+              <div
+                className="custom-dropzone"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  loadCustomFile(event.dataTransfer.files?.[0]);
+                }}
+              >
+                <input
+                  accept=".csv,.tsv,.txt,.json,application/json,text/csv,text/tab-separated-values"
+                  id="custom-file-input"
+                  type="file"
+                  onChange={(event) => loadCustomFile(event.target.files?.[0])}
+                />
+                <div>
+                  <strong>{customSetup.rawText ? customSetup.sourceUrl || "Lokale Datei" : "Datei hier ablegen"}</strong>
+                  <span>CSV, TSV, Text oder JSON-Liste</span>
+                </div>
+                <label className="secondary-button" htmlFor="custom-file-input">
+                  Lokal öffnen
                 </label>
-                <label className="field">
+                <button className="secondary-button" type="button" onClick={loadCustomClipboard}>
+                  Aus Zwischenablage
+                </button>
+                <button className="ghost-button" type="button" onClick={() => setCustomUrlDialogOpen(true)}>
+                  <LinkIcon size={15} />
                   URL
-                  <input
-                    placeholder="https://..."
-                    value={customSetup.sourceUrl}
-                    onChange={(event) =>
-                      updateCustomSetup({ sourceUrl: event.target.value })
-                    }
-                  />
+                </button>
+              </div>
+              <div className="custom-example-row">
+                <label className="field">
+                  Beispiel-Daten
+                  <select value={customExampleKey} onChange={(event) => setCustomExampleKey(event.target.value)}>
+                    <option value="">Auswählen</option>
+                    {customExampleDatasets.map((dataset) => (
+                      <option key={dataset.key} value={dataset.key}>
+                        {dataset.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <button
                   className="secondary-button custom-load-button"
                   type="button"
-                  onClick={loadCustomUrl}
-                  disabled={customUrlLoading}
+                  disabled={!customExampleKey || customExampleLoading}
+                  onClick={loadCustomExample}
                 >
-                  <LinkIcon size={15} />
-                  {customUrlLoading ? "Lädt..." : "URL laden"}
+                  {customExampleLoading ? "Lädt..." : "Beispiel laden"}
                 </button>
               </div>
+              <Dialog.Root open={customUrlDialogOpen} onOpenChange={setCustomUrlDialogOpen}>
+                <Dialog.Overlay className="dialog-overlay" />
+                <Dialog.Content className="dialog-content custom-url-dialog">
+                  <div className="dialog-header">
+                    <Dialog.Title>Remote-Datei laden</Dialog.Title>
+                    <Dialog.Description>CSV, TSV oder JSON von einer URL herunterladen.</Dialog.Description>
+                  </div>
+                  <label className="field">
+                    URL
+                    <input
+                      placeholder="https://..."
+                      value={customSetup.sourceUrl}
+                      onChange={(event) => updateCustomSetup({ sourceUrl: event.target.value })}
+                    />
+                  </label>
+                  <div className="dialog-actions">
+                    <button className="secondary-button" type="button" onClick={() => setCustomUrlDialogOpen(false)}>
+                      Abbrechen
+                    </button>
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={loadCustomUrl}
+                      disabled={customUrlLoading || !customSetup.sourceUrl.trim()}
+                    >
+                      <LinkIcon size={15} />
+                      {customUrlLoading ? "Lädt..." : "Laden"}
+                    </button>
+                  </div>
+                </Dialog.Content>
+              </Dialog.Root>
               {customLoadError ? (
                 <p className="form-error">{customLoadError}</p>
               ) : null}
               <div className="custom-options-grid">
                 <label className="field">
+                  Format
+                  <select
+                    value={customSetup.format}
+                    onChange={(event) =>
+                      updateCustomSetup({ format: event.target.value as CustomSetupState["format"] })
+                    }
+                  >
+                    <option value="auto">Auto</option>
+                    <option value="csv">CSV / Tabelle</option>
+                    <option value="json">JSON-Liste</option>
+                  </select>
+                </label>
+                <label className="field">
                   Trennzeichen
                   <select
+                    disabled={customSetup.format === "json"}
                     value={customSetup.delimiter}
                     onChange={(event) =>
                       updateCustomSetup({ delimiter: event.target.value })
@@ -641,6 +847,7 @@ export function HomePage() {
                 <label className="check-field">
                   <input
                     checked={customSetup.hasHeader}
+                    disabled={customSetup.format === "json"}
                     type="checkbox"
                     onChange={(event) =>
                       updateCustomSetup({ hasHeader: event.target.checked })
@@ -650,75 +857,41 @@ export function HomePage() {
                 </label>
               </div>
               {customSetup.columns.length > 0 ? (
-                <div className="custom-mapping-grid">
-                  <CustomColumnSelect
+                <div className="custom-mapping-panel">
+                  <div className="custom-mapping-grid">
+                    <CustomColumnSelect customSetup={customSetup} field="title" label="Titel / Name" onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="artist" label="Artist / Zusatzguess" onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="order" label="Sortierwert" onChange={updateCustomSetup} required />
+                    <CustomColumnSelect customSetup={customSetup} field="image" label="Bild-URL" onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="audio" label="Audio-URL" onChange={updateCustomSetup} />
+                    <label className="field">
+                      Label Sortierwert
+                      <input value={customSetup.orderLabel} onChange={(event) => updateCustomSetup({ orderLabel: event.target.value })} />
+                    </label>
+                  </div>
+                  <CustomKeySelect
                     customSetup={customSetup}
-                    field="title"
-                    label="Titel / Name"
-                    onChange={updateCustomSetup}
+                    label="Karten-Rückseite"
+                    value={customSetup.cardBackKeys}
+                    onChange={(cardBackKeys) => updateCustomSetup({ cardBackKeys })}
                   />
-                  <CustomColumnSelect
+                  <CustomKeySelect
                     customSetup={customSetup}
-                    field="artist"
-                    label="Artist / Zusatzguess"
-                    onChange={updateCustomSetup}
+                    label="Daten raten"
+                    value={customSetup.extraGuessKeys}
+                    onChange={(extraGuessKeys) => updateCustomSetup({ extraGuessKeys })}
                   />
-                  <CustomColumnSelect
+                  <CustomKeySelect
                     customSetup={customSetup}
-                    field="order"
-                    label="Sortierwert"
-                    onChange={updateCustomSetup}
-                    required
+                    label="Karten-Vorderseite"
+                    value={customSetup.cardFrontKeys}
+                    onChange={(cardFrontKeys) => updateCustomSetup({ cardFrontKeys })}
                   />
-                  <CustomColumnSelect
-                    customSetup={customSetup}
-                    field="image"
-                    label="Bild-URL"
-                    onChange={updateCustomSetup}
-                  />
-                  <CustomColumnSelect
-                    customSetup={customSetup}
-                    field="audio"
-                    label="Audio-URL"
-                    onChange={updateCustomSetup}
-                  />
-                  <label className="field">
-                    Label Sortierwert
-                    <input
-                      value={customSetup.orderLabel}
-                      onChange={(event) =>
-                        updateCustomSetup({ orderLabel: event.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="check-field">
-                    <input
-                      checked={customSetup.extraArtistGuess}
-                      type="checkbox"
-                      onChange={(event) =>
-                        updateCustomSetup({
-                          extraArtistGuess: event.target.checked,
-                        })
-                      }
-                    />
-                    Artist als Extra-Guess
-                  </label>
                 </div>
               ) : null}
               {customSetup.rawText ? (
                 <p className="muted">
-                  {customSetup.entries.length} Karten aus{" "}
-                  {Math.max(
-                    0,
-                    parseCsv(
-                      customSetup.rawText,
-                      resolveDelimiter(
-                        customSetup.rawText,
-                        customSetup.delimiter,
-                      ),
-                    ).length - (customSetup.hasHeader ? 1 : 0),
-                  )}{" "}
-                  Zeilen erzeugt.
+                  {customSetup.entries.length} Karten aus {customParsedSummary?.rowCount ?? 0} Einträgen erzeugt.
                 </p>
               ) : null}
             </div>
@@ -1712,6 +1885,71 @@ function HoldToConfirmButton({ disabled = false, onConfirm }: { disabled?: boole
       <span>einloggen</span>
     </button>
   );
+}
+
+function CustomKeySelect({
+  customSetup,
+  label,
+  onChange,
+  value,
+}: {
+  customSetup: CustomSetupState;
+  label: string;
+  onChange: (value: string[]) => void;
+  value: string[];
+}) {
+  const options = getCustomKeyOptions(customSetup);
+  const toggleKey = (key: string, checked: boolean) => {
+    onChange(checked ? [...value, key] : value.filter((candidate) => candidate !== key));
+  };
+
+  return (
+    <div className="spotify-display-options custom-key-options" aria-label={label}>
+      <span>{label}</span>
+      <div>
+        {options.map((option) => (
+          <label className={value.includes(option.key) ? "spotify-display-chip active" : "spotify-display-chip"} key={option.key}>
+            <input checked={value.includes(option.key)} type="checkbox" onChange={(event) => toggleKey(option.key, event.target.checked)} />
+            <span className="spotify-display-check" aria-hidden="true">
+              <Check size={12} strokeWidth={3} />
+            </span>
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const getCustomKeyOptions = (customSetup: CustomSetupState) => {
+  const keys = [
+    ...customSetup.columns,
+    customSetup.mapping.image ? "image" : "",
+    customSetup.mapping.audio ? "audioPreview" : "",
+  ].filter((key, index, all): key is string => Boolean(key) && all.indexOf(key) === index);
+  return keys.map((key) => ({ key, label: getCustomKeyOptionLabel(key, customSetup) }));
+};
+
+const getCustomKeyOptionLabel = (key: string, customSetup: CustomSetupState) => {
+  if (key === "image") return "Bild";
+  if (key === "audioPreview") return "Audio";
+  if (key === customSetup.mapping.order) return `${key} (Sortierwert)`;
+  return key;
+};
+
+async function loadBuiltInDataset(mode: "image-art" | "autoquartett") {
+  const config = builtInDatasetConfigs[mode];
+  const response = await fetch(`${import.meta.env.BASE_URL}${config.path}`);
+  if (!response.ok) throw new Error(`Datensatz konnte nicht geladen werden (${response.status}).`);
+  const rawText = await response.text();
+  const setup = buildCustomEntries({
+    ...createDefaultCustomSetup(),
+    rawText,
+    sourceUrl: config.path,
+    format: "json",
+    mapping: config.mapping,
+  });
+  return setup.entries;
 }
 
 function SpotifyPlayback({
@@ -3116,7 +3354,7 @@ const modeLabels: Record<GameMode, string> = {
 };
 
 const modeDescriptions: Record<GameMode, string> = {
-  "spotify-generator": "Song-Daten von Spotify laden",
+  "spotify-generator": "Song-Daten von Spotify (Premium) laden",
   "image-art": "Bekannte Kunstwerke laden",
   autoquartett: "KFZ-Daten laden",
   replay: "Vergangenes Spiel erneut spielen.",
@@ -3154,17 +3392,24 @@ function ModeSelect({ value, onValueChange }: { value: GameMode; onValueChange: 
 }
 
 
-const staticModeCardCounts: Record<Exclude<GameMode, "spotify-generator">, number> = {
+const fallbackStaticModeCardCounts: Record<Exclude<GameMode, "spotify-generator">, number> = {
   "image-art": 5,
   autoquartett: 5,
   replay: 0,
   custom: 0,
 };
 
-const getAvailableCardsLabel = (mode: GameMode, spotifyCount = 0, replayCount = 0, customCount = 0) => {
+const getAvailableCardsLabel = (
+  mode: GameMode,
+  spotifyCount = 0,
+  replayCount = 0,
+  customCount = 0,
+  builtInCounts: Record<"image-art" | "autoquartett", number> = { "image-art": 0, autoquartett: 0 },
+) => {
   if (mode === "replay") return String(replayCount);
   if (mode === "custom") return String(customCount);
-  if (mode !== "spotify-generator") return String(staticModeCardCounts[mode]);
+  if (mode === "image-art" || mode === "autoquartett") return String(builtInCounts[mode] || fallbackStaticModeCardCounts[mode]);
+  if (mode !== "spotify-generator") return String(fallbackStaticModeCardCounts[mode]);
   return `${spotifyCount}+`;
 };
 

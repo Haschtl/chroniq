@@ -390,6 +390,8 @@ export const createGame = (input: NewGameInput): Game => {
         ? createReplayEntries(input.customEntries ?? [])
       : input.mode === "spotify-generator"
       ? input.spotifyEntries ?? []
+      : input.mode === "image-art" && input.imageArtEntries?.length
+        ? input.imageArtEntries
       : input.mode === "autoquartett" && input.autoquartettEntries?.length
         ? input.autoquartettEntries
         : createStaticEntries(input.mode),
@@ -476,6 +478,8 @@ const createGeneratorSettings = (input: NewGameInput): GameGeneratorSettings => 
           ? input.customEntries?.length ?? 0
         : input.mode === "autoquartett"
           ? input.autoquartettEntries?.length ?? autoquartettEntries.length
+        : input.mode === "image-art"
+          ? input.imageArtEntries?.length ?? imageArtEntries.length
           : imageArtEntries.length,
     exhausted: true,
   };
