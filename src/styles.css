@@ -27,6 +27,8 @@
   --primary: #141414;
   --primary-foreground: #fffdfa;
   --danger: #9b2c2c;
+  --entry-play-card-width: min(170px, 42vw);
+  --entry-song-card-size: min(260px, 72vw);
 }
 
 * {
@@ -71,6 +73,7 @@ a {
   --primary: #141414;
   --primary-foreground: #fffdfa;
   --danger: #9b2c2c;
+  --round-title-stroke: #fffdfa;
 }
 
 .app-shell[data-theme="dark"] {
@@ -84,6 +87,7 @@ a {
   --primary: #fffdfa;
   --primary-foreground: #141414;
   --danger: #ffb4a9;
+  --round-title-stroke: #141414;
 }
 
 .app-shell[data-theme="dark"] .topbar,
@@ -102,6 +106,7 @@ a {
   background: var(--input);
   border-color: var(--border);
   color: var(--foreground);
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -116,6 +121,7 @@ a {
     --primary: #fffdfa;
     --primary-foreground: #141414;
     --danger: #ffb4a9;
+    --round-title-stroke: #141414;
   }
 
   .app-shell[data-theme="system"] .topbar,
@@ -134,6 +140,7 @@ a {
     background: var(--input);
     border-color: var(--border);
     color: var(--foreground);
+    color-scheme: dark;
   }
 }
 
@@ -286,6 +293,7 @@ main {
 
 .footer-menu-content {
   @apply z-50 min-w-56 rounded-2xl border border-border bg-card p-1.5 shadow-2xl;
+  color: var(--foreground);
 }
 
 .footer-menu-item {
@@ -303,9 +311,9 @@ main {
 .footer-scores {
   align-items: center;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   gap: 8px;
-  max-width: min(48vw, 320px);
+  min-width: 0;
   overflow-x: auto;
   padding: 2px;
 }
@@ -314,7 +322,7 @@ main {
   align-items: center;
   aspect-ratio: 1;
   background:
-    radial-gradient(circle, color-mix(in srgb, var(--card) 92%, transparent) 0 54%, transparent 55%),
+    radial-gradient(circle, color-mix(in srgb, var(--card) 72%, transparent) 0 54%, transparent 55%),
     conic-gradient(var(--player-color) 0 var(--score-progress), color-mix(in srgb, var(--player-color) 20%, transparent) var(--score-progress) 360deg);
   border: 1px solid color-mix(in srgb, var(--player-color) 58%, var(--border));
   border-radius: 999px;
@@ -323,9 +331,31 @@ main {
   flex: 0 0 auto;
   height: 54px;
   justify-content: center;
+  overflow: hidden;
   padding: 0;
   position: relative;
   width: 54px;
+}
+
+.score-chip::after {
+  background: color-mix(in srgb, var(--card) 36%, transparent);
+  border-radius: inherit;
+  content: "";
+  inset: 7px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.score-chip-avatar {
+  height: 78%;
+  inset: 11% 11% auto auto;
+  opacity: 0.42;
+  object-fit: contain;
+  pointer-events: none;
+  position: absolute;
+  width: 78%;
+  z-index: 0;
 }
 
 .score-chip-value {
@@ -333,31 +363,28 @@ main {
   font-weight: 950;
   line-height: 1;
   position: relative;
-  z-index: 1;
+  text-shadow: 0 1px 8px color-mix(in srgb, var(--card) 92%, transparent);
+  z-index: 2;
 }
 
 .score-chip-dots {
   inset: 0;
   pointer-events: none;
   position: absolute;
+  z-index: 3;
 }
 
 .score-chip-dot {
-  background: color-mix(in srgb, var(--card) 70%, rgba(20, 20, 20, 0.22));
-  border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
-  border-radius: 999px;
-  height: 8px;
-  left: calc(50% - 4px);
-  position: absolute;
-  top: calc(50% - 4px);
-  transform: rotate(var(--dot-angle)) translateY(-25px) rotate(calc(-1 * var(--dot-angle)));
-  width: 8px;
-}
-
-.score-chip-dot.active {
   background: #f5d35d;
-  border-color: #7a5a08;
-  box-shadow: 0 0 0 2px rgba(245, 211, 93, 0.22);
+  border: 1px solid #7a5a08;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(20, 20, 20, 0.28);
+  height: 6px;
+  left: calc(50% - 3px);
+  position: absolute;
+  top: calc(50% - 3px);
+  transform: rotate(var(--dot-angle)) translateY(-20px) rotate(calc(-1 * var(--dot-angle)));
+  width: 6px;
 }
 
 .setup-grid {
@@ -400,8 +427,24 @@ main {
   @apply grid gap-3.5;
 }
 
+.setup-section.accordion-section {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none;
+  display: block;
+  padding: 0;
+}
+
+.setup-accordion-root {
+  display: block;
+}
+
 .start-section {
   @apply gap-3;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none;
+  padding: 0;
 }
 
 .section-heading.compact h2 {
@@ -505,7 +548,30 @@ h2 {
 input,
 select {
   @apply min-h-11 w-full rounded-lg border border-border px-3 py-2.5 text-foreground;
+  appearance: none;
   background: var(--input);
+  color-scheme: light;
+}
+
+select {
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    var(--input);
+  padding-right: 38px;
+}
+
+select option {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+input:focus,
+select:focus,
+.mode-select-trigger:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 54%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+  outline: 0;
 }
 
 input[type="color"] {
@@ -630,10 +696,11 @@ input[type="color"] {
 }
 
 .spotify-live-results {
-  background: rgba(255, 253, 250, 0.98);
-  border: 1px solid rgba(20, 20, 20, 0.08);
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 18px 48px rgba(20, 20, 20, 0.12);
+  color: var(--foreground);
   display: grid;
   gap: 8px;
   padding: 8px;
@@ -642,19 +709,34 @@ input[type="color"] {
 .spotify-result {
   background: transparent;
   border: 0;
+  border-radius: 14px;
+  color: var(--foreground);
   padding: 0;
   text-align: left;
 }
 
+.spotify-result:hover,
+.spotify-result:focus-visible {
+  outline: 0;
+}
+
+.spotify-result:hover .spotify-seed-card,
+.spotify-result:focus-visible .spotify-seed-card {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card-muted));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
+}
+
 .spotify-seed-card {
   align-items: center;
-  background: rgba(247, 244, 237, 0.78);
-  border: 1px solid rgba(20, 20, 20, 0.08);
+  background: color-mix(in srgb, var(--card-muted) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 14px;
+  color: var(--foreground);
   display: grid;
   gap: 12px;
   grid-template-columns: 64px minmax(0, 1fr) auto;
   padding: 10px;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 
 .spotify-seed-card.compact {
@@ -683,13 +765,13 @@ input[type="color"] {
 }
 
 .spotify-seed-card span {
-  color: #6f6a61;
+  color: var(--muted);
 }
 
 .spotify-seed-card b {
-  background: #141414;
+  background: var(--primary);
   border-radius: 999px;
-  color: #fffdfa;
+  color: var(--primary-foreground);
   font-size: 0.82rem;
   padding: 6px 9px;
   white-space: nowrap;
@@ -708,8 +790,8 @@ input[type="color"] {
 
 .spotify-preload-row {
   align-items: center;
-  background: rgba(247, 244, 237, 0.58);
-  border: 1px solid rgba(20, 20, 20, 0.06);
+  background: color-mix(in srgb, var(--card-muted) 64%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
   border-radius: 10px;
   display: flex;
   gap: 10px;
@@ -718,7 +800,7 @@ input[type="color"] {
 }
 
 .spotify-preload-row span {
-  color: #6f6a61;
+  color: var(--muted);
   font-size: 0.9rem;
   font-weight: 750;
 }
@@ -741,6 +823,138 @@ input[type="color"] {
 
 .mode-card.active span {
   color: rgba(255, 253, 250, 0.72);
+}
+
+.mode-select-trigger {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--foreground);
+  display: flex;
+  justify-content: space-between;
+  min-height: 74px;
+  padding: 13px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.mode-select-trigger[data-state="open"] {
+  background: color-mix(in srgb, var(--card-muted) 72%, var(--card));
+}
+
+.mode-select-trigger span,
+.mode-select-item span,
+.setup-accordion-trigger span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mode-select-trigger b,
+.mode-select-item b,
+.setup-accordion-trigger b {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.mode-select-trigger small,
+.mode-select-item small,
+.setup-accordion-trigger small {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.mode-select-icon {
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 900;
+  padding-left: 12px;
+}
+
+.mode-select-content {
+  background: color-mix(in srgb, var(--card) 98%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  color: var(--foreground);
+  min-width: var(--radix-select-trigger-width);
+  overflow: hidden;
+  padding: 6px;
+  z-index: 80;
+}
+
+.mode-select-item {
+  align-items: center;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  outline: 0;
+  padding: 11px 12px;
+}
+
+.mode-select-item[data-highlighted] {
+  background: color-mix(in srgb, var(--primary) 10%, var(--card-muted));
+}
+
+.mode-select-item[data-state="checked"] {
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+
+.mode-select-check {
+  color: var(--primary);
+  display: inline-flex;
+}
+
+.setup-accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.setup-accordion-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--foreground);
+  display: flex;
+  justify-content: space-between;
+  padding: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.setup-accordion-trigger > span:last-child {
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 900;
+  transition: transform 220ms ease;
+}
+
+.setup-accordion-trigger[data-state="open"] > span:last-child {
+  transform: rotate(180deg);
+}
+
+.setup-accordion-content {
+  overflow: hidden;
+}
+
+.setup-accordion-content[data-state="open"] {
+  animation: accordion-down 260ms ease-out;
+}
+
+.setup-accordion-content[data-state="closed"] {
+  animation: accordion-up 220ms ease-out;
+}
+
+.setup-accordion-content .stop-config {
+  border-top: 1px solid var(--border);
+  padding: 14px;
 }
 
 .player-card,
@@ -788,6 +1002,69 @@ input[type="color"] {
   width: 28px;
 }
 
+.team-avatar-wrap {
+  align-self: center;
+  background:
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--player-color) 32%, transparent), transparent 58%),
+    color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--player-color) 42%, var(--border));
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--player-color) 10%, transparent);
+  display: grid;
+  justify-self: center;
+  overflow: hidden;
+  place-items: center;
+  position: relative;
+  width: min(112px, 58%);
+}
+
+.team-avatar-wrap.small {
+  align-self: auto;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--player-color) 10%, transparent);
+  flex: 0 0 auto;
+  height: 48px;
+  justify-self: auto;
+  width: 48px;
+}
+
+.team-avatar-wrap::before {
+  content: "";
+  display: block;
+  grid-area: 1 / 1;
+  padding-top: 100%;
+}
+
+.team-avatar {
+  grid-area: 1 / 1;
+  height: 88%;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  width: 88%;
+}
+
+.team-avatar.normal {
+  opacity: 1;
+}
+
+.team-avatar-wrap:hover .team-avatar.normal,
+.team-avatar-wrap:active .team-avatar.normal,
+.team-avatar-wrap:hover .team-avatar.pressed {
+  opacity: 0;
+}
+
+.team-avatar-wrap:hover .team-avatar.wink {
+  opacity: 1;
+}
+
+.team-avatar-wrap:active .team-avatar.wink {
+  opacity: 0;
+}
+
+.team-avatar-wrap:active .team-avatar.pressed {
+  opacity: 1;
+}
+
 .player-card input:not([type="color"]) {
   align-self: center;
   background: color-mix(in srgb, var(--card) 74%, transparent);
@@ -808,11 +1085,11 @@ input[type="color"] {
 .add-player-card {
   align-items: center;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--primary) 92%, transparent), color-mix(in srgb, var(--primary) 74%, transparent)),
-    var(--primary);
-  border: 1px solid color-mix(in srgb, var(--primary-foreground) 18%, transparent);
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 52%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card) 88%, transparent), color-mix(in srgb, var(--card-muted) 82%, transparent));
+  border: 2px dashed color-mix(in srgb, var(--primary) 70%, var(--border));
   box-shadow: 0 18px 44px rgba(20, 20, 20, 0.12);
-  color: var(--primary-foreground);
+  color: var(--primary);
   display: flex;
   justify-content: center;
   transform-style: preserve-3d;
@@ -874,39 +1151,47 @@ input[type="color"] {
 }
 
 .connector-accordion {
-  background: rgba(247, 244, 237, 0.42);
-  border: 1px solid rgba(20, 20, 20, 0.07);
-  border-radius: 14px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 12px;
+  color: var(--muted);
 }
 
 .connector-accordion-trigger {
   align-items: center;
-  color: #1d1d1b;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
   display: flex;
   justify-content: space-between;
   list-style: none;
-  min-height: 34px;
-  padding: 7px 10px;
+  min-height: 32px;
+  padding: 6px 8px;
   width: 100%;
 }
 
+.connector-accordion-trigger span {
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .connector-accordion-trigger b {
-  background: #eef5ef;
+  background: color-mix(in srgb, #47a66b 14%, transparent);
   border-radius: 999px;
-  color: #244a2a;
-  font-size: 0.78rem;
-  padding: 3px 7px;
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
+  font-size: 0.74rem;
+  padding: 2px 6px;
 }
 
 .connector-accordion.missing {
-  background: #fff3f0;
-  border-color: #d94f70;
-  color: #7b2036;
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 46%, var(--border));
+  color: var(--danger);
 }
 
 .connector-accordion.missing .connector-accordion-trigger b {
-  background: #d94f70;
-  color: #fffdfa;
+  background: color-mix(in srgb, var(--danger) 88%, var(--foreground));
+  color: var(--background);
 }
 
 .connector-accordion-content {
@@ -922,10 +1207,10 @@ input[type="color"] {
 }
 
 .connector-accordion-body {
-  border-top: 1px solid rgba(20, 20, 20, 0.08);
+  border-top: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
   display: grid;
   gap: 12px;
-  padding: 10px;
+  padding: 8px;
 }
 
 .connector-summary-row {
@@ -941,13 +1226,13 @@ input[type="color"] {
 }
 
 .connector-summary-row b.ok {
-  background: #eef5ef;
-  color: #244a2a;
+  background: color-mix(in srgb, #47a66b 14%, transparent);
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
 }
 
 .connector-summary-row b.missing {
-  background: #fff3f0;
-  color: #7b2036;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 @keyframes accordion-down {
@@ -969,7 +1254,27 @@ input[type="color"] {
 }
 
 .start-button {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #47a66b 92%, white 8%), color-mix(in srgb, #3867a6 92%, #47a66b 8%));
+  border: 0;
+  box-shadow: 0 18px 48px color-mix(in srgb, #47a66b 24%, transparent);
+  color: #fffdfa;
+  font-size: 1.08rem;
+  min-height: 62px;
+  padding: 16px 22px;
   width: 100%;
+}
+
+.start-button:not(:disabled):hover {
+  box-shadow: 0 22px 58px color-mix(in srgb, #47a66b 30%, transparent);
+  transform: translateY(-1px);
+}
+
+.start-button:disabled {
+  background: color-mix(in srgb, var(--card-muted) 82%, var(--foreground) 8%);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  color: var(--muted);
 }
 
 .facts {
@@ -1003,6 +1308,16 @@ input[type="color"] {
   gap: 16px;
   justify-content: space-between;
   margin-bottom: 24px;
+}
+
+.round-header h1 {
+  -webkit-text-stroke: 3.5px var(--round-title-stroke);
+  paint-order: stroke fill;
+  text-shadow:
+    3px 0 var(--round-title-stroke),
+    -3px 0 var(--round-title-stroke),
+    0 3px var(--round-title-stroke),
+    0 -3px var(--round-title-stroke);
 }
 
 .scoreboard {
@@ -1058,10 +1373,11 @@ input[type="color"] {
 }
 
 .player-dropdown {
-  background: rgba(255, 253, 250, 0.96);
-  border: 1px solid rgba(20, 20, 20, 0.1);
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: 0 24px 70px rgba(20, 20, 20, 0.18);
+  color: var(--foreground);
   min-width: min(420px, calc(100vw - 24px));
   padding: 12px;
   z-index: 30;
@@ -1069,7 +1385,7 @@ input[type="color"] {
 
 .player-dropdown-header {
   align-items: center;
-  border-bottom: 1px solid rgba(20, 20, 20, 0.08);
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   padding: 4px 4px 10px;
@@ -1078,7 +1394,7 @@ input[type="color"] {
 .player-dropdown-header span,
 .dropdown-empty,
 .track-meta span {
-  color: #6f6a61;
+  color: var(--muted);
 }
 
 .dropdown-empty {
@@ -1093,8 +1409,8 @@ input[type="color"] {
 
 .player-timeline-item {
   align-items: center;
-  background: rgba(247, 244, 237, 0.72);
-  border: 1px solid rgba(20, 20, 20, 0.06);
+  background: color-mix(in srgb, var(--card-muted) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   border-radius: 10px;
   display: grid;
   gap: 12px;
@@ -1106,7 +1422,7 @@ input[type="color"] {
 .timeline-card img,
 .cover-placeholder {
   aspect-ratio: 1;
-  background: #ded5c6;
+  background: color-mix(in srgb, var(--border) 72%, var(--card-muted));
   border-radius: 8px;
   object-fit: cover;
   width: 48px;
@@ -1195,7 +1511,7 @@ input[type="color"] {
   gap: 14px;
   justify-content: center;
   overflow-x: auto;
-  padding: 4px 0 10px;
+  padding: 4px max(12px, env(safe-area-inset-left)) 10px;
   position: relative;
   width: 100%;
 }
@@ -1237,7 +1553,7 @@ input[type="color"] {
   color: inherit;
   cursor: pointer;
   flex: 0 0 auto;
-  height: min(260px, 72vw);
+  height: var(--entry-song-card-size);
   overflow: hidden;
   padding: 0;
 }
@@ -1425,6 +1741,18 @@ input[type="color"] {
   margin: 0;
 }
 
+.result-box-actions {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+  max-width: 360px;
+}
+
+.result-box-actions .primary-button {
+  min-width: 180px;
+}
+
 .history-item {
   background: #f7f4ed;
   border: 1px solid #ded5c6;
@@ -1434,6 +1762,99 @@ input[type="color"] {
 
 .result-flow {
   gap: 22px;
+}
+
+.finished-game-flow {
+  gap: 18px;
+}
+
+.finished-result-box {
+  align-items: center;
+}
+
+.finished-result-box h1 {
+  font-size: clamp(2rem, 8vw, 4.8rem);
+  line-height: 0.95;
+  margin: 0;
+}
+
+.finished-result-box > span {
+  background: var(--foreground);
+  border-radius: 999px;
+  color: var(--background);
+  font-weight: 900;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.winner-card-stage {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  padding: 16px;
+}
+
+.winner-card-stage > p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.winner-card-stage .timeline-card {
+  width: min(240px, 62vw);
+}
+
+.finished-orders {
+  display: grid;
+  gap: 14px;
+}
+
+.finished-order-card {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--player-color) 20%, transparent), transparent 36%),
+    color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--player-color) 34%, var(--border));
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.finished-order-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.finished-order-header h2,
+.finished-order-header p {
+  margin: 0;
+}
+
+.finished-order-header h2 {
+  font-size: 1.05rem;
+}
+
+.finished-order-header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.finished-order-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+}
+
+.finished-order-row .timeline-card {
+  width: 100%;
 }
 
 .sort-flow {
@@ -1473,7 +1894,7 @@ input[type="color"] {
   overflow: hidden;
   position: relative;
   transform-style: preserve-3d;
-  width: min(170px, 42vw);
+  width: var(--entry-play-card-width);
   will-change: transform;
 }
 
@@ -1490,7 +1911,7 @@ input[type="color"] {
   overflow: visible;
   perspective: 1100px;
   perspective-origin: 50% 50%;
-  width: min(260px, 72vw);
+  width: var(--entry-song-card-size);
 }
 
 .song-card-inner {
@@ -1773,6 +2194,26 @@ input[type="color"] {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.extra-guess-stage-panel {
+  align-content: center;
+  background: color-mix(in srgb, var(--card) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  max-width: min(620px, 100%);
+  padding: clamp(14px, 3vw, 22px);
+  width: 100%;
+}
+
+.extra-guess-stage-panel .dialog-header {
+  max-width: 520px;
+}
+
+.extra-guess-stage-panel .dialog-actions {
+  justify-content: end;
+}
+
 .dialog-overlay {
   background: rgba(0, 0, 0, 0.48);
   inset: 0;
@@ -1837,21 +2278,34 @@ input[type="color"] {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: end;
+}
+
+.guess-result-summary {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.guess-result-summary > strong {
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
+  font-size: 0.92rem;
 }
 
 .guess-result {
-  background: #fff3f0;
-  border: 1px solid #d94f70;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
   border-radius: 999px;
-  color: #7b2036;
+  color: var(--danger);
+  font-size: 0.82rem;
   font-weight: 800;
   padding: 6px 10px;
 }
 
 .guess-result.correct {
-  background: #eef5ef;
-  border-color: #47a66b;
-  color: #244a2a;
+  background: color-mix(in srgb, #47a66b 14%, transparent);
+  border-color: color-mix(in srgb, #47a66b 58%, var(--border));
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
 }
 
 .actions,
@@ -1909,20 +2363,8 @@ input[type="color"] {
 }
 
 .challenge-team-card {
-  aspect-ratio: 2 / 3;
-  background:
-    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--player-color) 38%, transparent), transparent 44%),
-    linear-gradient(145deg, color-mix(in srgb, var(--card) 94%, transparent), color-mix(in srgb, var(--card-muted) 88%, transparent));
-  border: 2px solid var(--player-color);
-  border-radius: 16px;
-  box-shadow: 0 18px 44px rgba(20, 20, 20, 0.1);
-  color: var(--foreground);
   cursor: pointer;
-  display: grid;
-  gap: 12px;
-  grid-template-rows: auto 1fr auto;
   min-height: 190px;
-  padding: 14px;
   text-align: center;
   transition:
     border-color 0.18s ease,
@@ -1941,10 +2383,10 @@ input[type="color"] {
 }
 
 .challenge-team-card > strong {
-  align-self: center;
   font-size: 1.15rem;
   font-weight: 900;
   line-height: 1.05;
+  margin-top: -4px;
 }
 
 .challenge-team-meta {
@@ -2080,6 +2522,11 @@ input[type="color"] {
 }
 
 @media (max-width: 860px) {
+  :root {
+    --entry-play-card-width: min(150px, 38vw);
+    --entry-song-card-size: min(220px, 58vw);
+  }
+
   .topbar,
   .setup-grid,
   .connector-card,
@@ -2093,5 +2540,29 @@ input[type="color"] {
 
   .card-backs {
     grid-template-columns: repeat(3, minmax(72px, 1fr));
+    justify-content: flex-start;
+    scroll-padding-inline: max(12px, env(safe-area-inset-left));
+  }
+
+  .card-backs.selecting {
+    justify-content: center;
+  }
+
+  .play-card {
+    height: 210px;
+    width: var(--entry-play-card-width);
+  }
+
+  .song-card,
+  .sort-card:has(.song-card) {
+    width: var(--entry-song-card-size);
+  }
+
+  .song-card-picker {
+    height: var(--entry-song-card-size);
+  }
+
+  .sort-card {
+    width: min(150px, 38vw);
   }
 }

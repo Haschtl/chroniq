@@ -8,6 +8,7 @@ const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
 const OAUTH_STORAGE_KEY = "chroniq:spotify-oauth";
 const SCOPES = ["user-read-private", "user-read-email", "streaming", "user-read-playback-state", "user-modify-playback-state"];
 const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID?.trim() ?? "";
+const APP_BASE_PATH = import.meta.env.BASE_URL || "/";
 
 interface SpotifyOAuthSession {
   clientId: string;
@@ -109,7 +110,7 @@ export interface SpotifySeedPreview {
   strategy: string;
 }
 
-export const getSpotifyRedirectUri = () => `${window.location.origin}${import.meta.env.VITE_BASE_PATH}connectors/spotify/callback`;
+export const getSpotifyRedirectUri = () => `${window.location.origin}${joinBasePath("connectors/spotify/callback")}`;
 
 export const hasSpotifyClientId = () => Boolean(SPOTIFY_CLIENT_ID);
 
@@ -681,7 +682,7 @@ const normalizeSpotifyItem = (type: SpotifySeedType, item: Record<string, unknow
       totalTracks,
       imageUrl: getImageUrl(item),
       externalUrl,
-      strategy: "Playlist zufaellig",
+      strategy: "Playlist zufällig",
     };
   }
   return {
@@ -735,3 +736,9 @@ const base64UrlEncode = (buffer: ArrayBuffer) =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
+
+const joinBasePath = (path: string) => {
+  const base = APP_BASE_PATH.endsWith("/") ? APP_BASE_PATH : `${APP_BASE_PATH}/`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return `${base}${cleanPath}`;
+};

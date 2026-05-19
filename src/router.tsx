@@ -4,9 +4,12 @@ import {
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";
+import { toonHead } from "@dicebear/collection";
+import { createAvatar } from "@dicebear/core";
 import * as Accordion from "@radix-ui/react-accordion";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as Select from "@radix-ui/react-select";
 import {
   Link,
   Outlet,
@@ -305,8 +308,7 @@ function FooterMenu({
           <Menu size={20} />
         </button>
       </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content align="end" className="footer-menu-content" side="top" sideOffset={10}>
+      <DropdownMenu.Content align="end" className="footer-menu-content" side="top" sideOffset={10}>
           <DropdownMenu.Item
             className="footer-menu-item danger"
             disabled={!canFinishGame}
@@ -333,8 +335,7 @@ function FooterMenu({
               {translate("footer.settings")}
             </Link>
           </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
+      </DropdownMenu.Content>
     </DropdownMenu.Root>
   );
 }
@@ -652,6 +653,7 @@ function HomePage() {
                     ×
                   </button>
                 </div>
+                <TeamAvatar color={player.color} name={player.name} />
                 <input
                   aria-label={`Name Team ${index + 1}`}
                   value={player.name}
@@ -682,19 +684,7 @@ function HomePage() {
             <p>Spieltyp</p>
             <h2>Modus und Quelle</h2>
           </div>
-          <div className="mode-grid" role="radiogroup" aria-label="Spielmodus">
-            {(Object.keys(modeLabels) as GameMode[]).map((entry) => (
-              <button
-                className={mode === entry ? "mode-card active" : "mode-card"}
-                key={entry}
-                type="button"
-                onClick={() => setMode(entry)}
-              >
-                <strong>{modeLabels[entry]}</strong>
-                <span>{modeDescriptions[entry]}</span>
-              </button>
-            ))}
-          </div>
+          <ModeSelect value={mode} onValueChange={setMode} />
 
           {mode === "spotify-generator" ? (
             <div className="spotify-tools">
@@ -731,20 +721,6 @@ function HomePage() {
               {spotifyPreview ? (
                 <div className="spotify-seed-selection">
                   <SpotifySeedCard preview={spotifyPreview} />
-                  <button
-                    className="ghost-button seed-clear-button"
-                    type="button"
-                    onClick={() => {
-                      setSpotifyPreview(undefined);
-                      setSpotifySeed("");
-                      setSpotifyQuery("");
-                      setSpotifyResults([]);
-                      clearSpotifyPreload();
-                    }}
-                  >
-                    <X size={15} />
-                    Abwählen
-                  </button>
                   <div className="spotify-preload-row">
                     <span>
                       {spotifyEntries.length} Karten vorgeladen{spotifyExhausted ? " · Quelle ausgeschöpft" : ""}
@@ -868,39 +844,50 @@ function HomePage() {
           ) : null}
         </section>
 
-        <section className="setup-section">
-          <div className="section-heading compact">
-            <p>Sieg</p>
-            <h2>Wann endet das Spiel?</h2>
-          </div>
-          <div className="stop-config">
-          <div className="mode-grid" role="radiogroup" aria-label="Spielende">
-            {stopConditionOptions.map((option) => (
-              <button
-                className={stopType === option.type ? "mode-card compact active" : "mode-card compact"}
-                key={option.type}
-                type="button"
-                onClick={() => {
-                  setStopType(option.type);
-                  setStopValue(option.defaultValue);
-                }}
-              >
-                <strong>{option.label}</strong>
-                <span>{option.description}</span>
-              </button>
-            ))}
-          </div>
-          <label className="field">
-            {stopConditionOptions.find((option) => option.type === stopType)?.valueLabel}
-            <input
-              type="number"
-              min={1}
-              max={stopType === "maxRounds" ? 100 : 30}
-              value={stopValue}
-              onChange={(event) => setStopValue(Number(event.target.value))}
-            />
-          </label>
-          </div>
+        <section className="setup-section accordion-section">
+          <Accordion.Root className="setup-accordion-root" collapsible type="single">
+            <Accordion.Item className="setup-accordion" value="victory">
+              <Accordion.Header>
+                <Accordion.Trigger className="setup-accordion-trigger">
+                  <span>
+                    <b>Sieg</b>
+                    <small>{getStopConditionSummary(stopType, stopValue)}</small>
+                  </span>
+                  <span aria-hidden="true">⌄</span>
+                </Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Content className="setup-accordion-content">
+                <div className="stop-config">
+                  <div className="mode-grid" role="radiogroup" aria-label="Spielende">
+                    {stopConditionOptions.map((option) => (
+                      <button
+                        className={stopType === option.type ? "mode-card compact active" : "mode-card compact"}
+                        key={option.type}
+                        type="button"
+                        onClick={() => {
+                          setStopType(option.type);
+                          setStopValue(option.defaultValue);
+                        }}
+                      >
+                        <strong>{option.label}</strong>
+                        <span>{option.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <label className="field">
+                    {stopConditionOptions.find((option) => option.type === stopType)?.valueLabel}
+                    <input
+                      type="number"
+                      min={1}
+                      max={stopType === "maxRounds" ? 100 : 30}
+                      value={stopValue}
+                      onChange={(event) => setStopValue(Number(event.target.value))}
+                    />
+                  </label>
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
+          </Accordion.Root>
         </section>
 
         <section className="setup-section start-section">
@@ -1020,6 +1007,21 @@ function GamePage() {
   useEffect(() => {
     setPlaybackPaused(false);
   }, [activePlaybackEntry?.id]);
+
+  useEffect(() => {
+    const game = state.activeGame;
+    if (!game || game.phase === "finished") return;
+    if (entryLoading) return;
+    if (getAvailableEntries(game).length > 0) return;
+    if (game.generator.type === "spotify-generator" && !game.generator.exhausted) return;
+
+    setState((current) => {
+      if (!current.activeGame || current.activeGame.id !== game.id || current.activeGame.phase === "finished") return current;
+      if (getAvailableEntries(current.activeGame).length > 0) return current;
+      if (current.activeGame.generator.type === "spotify-generator" && !current.activeGame.generator.exhausted) return current;
+      return { ...current, activeGame: finishGame(current.activeGame) };
+    });
+  }, [entryLoading, state.activeGame?.id, state.activeGame?.phase, state.activeGame?.guessEntries.length, state.activeGame?.generator.exhausted]);
 
   if (!state.activeGame) {
     return (
@@ -1175,6 +1177,45 @@ function SpotifySeedCard({
   );
 }
 
+function ModeSelect({
+  onValueChange,
+  value,
+}: {
+  onValueChange: (value: GameMode) => void;
+  value: GameMode;
+}) {
+  return (
+    <Select.Root value={value} onValueChange={(nextValue) => onValueChange(nextValue as GameMode)}>
+      <Select.Trigger className="mode-select-trigger" aria-label="Spielmodus">
+        <Select.Value>
+          <span>
+            <b>{modeLabels[value]}</b>
+            <small>{modeDescriptions[value]}</small>
+          </span>
+        </Select.Value>
+        <Select.Icon className="mode-select-icon">⌄</Select.Icon>
+      </Select.Trigger>
+      <Select.Content className="mode-select-content" position="popper" sideOffset={8}>
+        <Select.Viewport>
+          {(Object.keys(modeLabels) as GameMode[]).map((modeValue) => (
+            <Select.Item className="mode-select-item" key={modeValue} value={modeValue}>
+              <Select.ItemText>
+                <span>
+                  <b>{modeLabels[modeValue]}</b>
+                  <small>{modeDescriptions[modeValue]}</small>
+                </span>
+              </Select.ItemText>
+              <Select.ItemIndicator className="mode-select-check">
+                <Check size={16} />
+              </Select.ItemIndicator>
+            </Select.Item>
+          ))}
+        </Select.Viewport>
+      </Select.Content>
+    </Select.Root>
+  );
+}
+
 function CustomColumnSelect({
   customSetup,
   field,
@@ -1313,20 +1354,20 @@ function PlayerScoreChip({ player, target }: { player: Player; target: number })
             } as React.CSSProperties
           }
         >
+          <img alt="" className="score-chip-avatar" src={getTeamIconDataUri(player.name, player.color)} />
           <span className="score-chip-value">{player.points}</span>
           <span className="score-chip-dots" aria-label={`${player.extraPoints} Korrekturpunkte`}>
-            {Array.from({ length: 3 }, (_, index) => (
+            {Array.from({ length: player.extraPoints }, (_, index) => (
               <i
-                className={index < player.extraPoints ? "score-chip-dot active" : "score-chip-dot"}
+                className="score-chip-dot active"
                 key={index}
-                style={{ "--dot-angle": `${index * 120}deg` } as React.CSSProperties}
+                style={getScoreDotStyle(index, player.extraPoints)}
               />
             ))}
           </span>
         </button>
       </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content align="start" className="player-dropdown" sideOffset={8}>
+      <DropdownMenu.Content align="start" className="player-dropdown" sideOffset={8}>
           <div className="player-dropdown-header">
             <strong>{player.name}</strong>
             <span>{player.points} Punkte</span>
@@ -1340,8 +1381,7 @@ function PlayerScoreChip({ player, target }: { player: Player; target: number })
               ))}
             </div>
           )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
+      </DropdownMenu.Content>
     </DropdownMenu.Root>
   );
 }
@@ -1393,7 +1433,7 @@ function PickCard({
               animate={{
                 opacity: selectedEntryId && selectedEntryId !== entry.id ? 0 : 1,
                 scale: selectedEntryId === entry.id ? 1.08 : 1,
-                width: selectedEntryId && selectedEntryId !== entry.id ? 0 : "min(260px, 72vw)",
+                width: selectedEntryId && selectedEntryId !== entry.id ? 0 : "var(--entry-song-card-size)",
               }}
               className={[
                 "song-card-picker",
@@ -1415,7 +1455,7 @@ function PickCard({
                 marginRight: selectedEntryId && selectedEntryId !== entry.id ? 0 : 0,
                 opacity: selectedEntryId && selectedEntryId !== entry.id ? 0 : 1,
                 scale: selectedEntryId === entry.id ? 1.08 : 1,
-                width: selectedEntryId && selectedEntryId !== entry.id ? 0 : "min(170px, 42vw)",
+                width: selectedEntryId && selectedEntryId !== entry.id ? 0 : "var(--entry-play-card-width)",
               }}
               className={[
                 "play-card card-back",
@@ -1514,11 +1554,9 @@ function SortAndGuess({
   const key = game.settings.orderSelector.key;
   const [proposedIndex, setProposedIndex] = useState<number | undefined>();
   const [values, setValues] = useState<Record<string, string>>({});
-  const [guessDialogOpen, setGuessDialogOpen] = useState(false);
   useEffect(() => {
     if (player.timeline.length > 0 || proposedIndex !== undefined) return;
     setProposedIndex(0);
-    setGuessDialogOpen(true);
   }, [player.timeline.length, proposedIndex]);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -1529,11 +1567,9 @@ function SortAndGuess({
 
   const selectPlacement = (index: number) => {
     setProposedIndex(index);
-    setGuessDialogOpen(true);
   };
 
   const resetPlacement = () => {
-    setGuessDialogOpen(false);
     setProposedIndex(undefined);
   };
 
@@ -1557,7 +1593,40 @@ function SortAndGuess({
                 paused={paused}
                 onTogglePause={onTogglePause}
               />
-            ) : null}
+            ) : (
+              <div className="extra-guess-stage-panel">
+                <div className="dialog-header">
+                  <h2>Extra Guesses</h2>
+                  <p>Karte wurde einsortiert. Trage die Zusatz-Tipps ein und logge den Guess ein.</p>
+                </div>
+                {game.settings.extraGuessSelectors.length > 0 ? (
+                  <div className="extra-guess-grid">
+                    {game.settings.extraGuessSelectors.map((selector) => (
+                      <label className="field" key={selector.key}>
+                        {selector.label}
+                        <input
+                          value={values[selector.key] ?? ""}
+                          onChange={(event) => setValues((current) => ({ ...current, [selector.key]: event.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="muted">Keine Extra-Guesses für diesen Modus.</p>
+                )}
+                <div className="dialog-actions">
+                  {player.timeline.length > 0 ? (
+                    <button className="secondary-button" type="button" onClick={resetPlacement}>
+                      Weiter einsortieren
+                    </button>
+                  ) : null}
+                  <button className="primary-button" type="submit">
+                    <Check size={16} />
+                    Guess einloggen
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="timeline-row">
             {Array.from({ length: player.timeline.length + 1 }, (_, index) => (
@@ -1585,47 +1654,6 @@ function SortAndGuess({
           </div>
         </div>
       </DndContext>
-      <Dialog.Root open={guessDialogOpen} onOpenChange={(open) => (open ? setGuessDialogOpen(true) : resetPlacement())}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay" />
-          <Dialog.Content className="dialog-content extra-guess-dialog" onOpenAutoFocus={(event) => event.preventDefault()}>
-            <div className="dialog-header">
-              <Dialog.Title>Extra Guesses</Dialog.Title>
-              <Dialog.Description>Karte wurde einsortiert. Trage die Zusatz-Tipps ein und logge den Guess ein.</Dialog.Description>
-            </div>
-            {game.settings.extraGuessSelectors.length > 0 ? (
-              <div className="extra-guess-grid">
-                {game.settings.extraGuessSelectors.map((selector) => (
-                  <label className="field" key={selector.key}>
-                    {selector.label}
-                    <input
-                      value={values[selector.key] ?? ""}
-                      onChange={(event) => setValues((current) => ({ ...current, [selector.key]: event.target.value }))}
-                    />
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <p className="muted">Keine Extra-Guesses für diesen Modus.</p>
-            )}
-            <div className="dialog-actions">
-              <button className="secondary-button" type="button" onClick={resetPlacement}>
-                Weiter einsortieren
-              </button>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => {
-                  if (proposedIndex !== undefined) onSubmit(proposedIndex, values);
-                }}
-              >
-                <Check size={16} />
-                Guess einloggen
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
     </form>
   );
 }
@@ -1969,63 +1997,62 @@ function Challenge({ game, onResolve }: { game: Game; onResolve: (claims?: Round
         player={activePlayer}
       />
       <Dialog.Root open={selectedCorrectionIndex !== undefined} onOpenChange={(open) => !open && setSelectedCorrectionIndex(undefined)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay" />
-          <Dialog.Content
-            className="dialog-content challenge-dialog"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-          >
-            <div className="dialog-header">
-              <Dialog.Title>Korrektur anmelden</Dialog.Title>
-              <Dialog.Description>
-                Wähle das Team, das die Karte an dieser Luecke einsortieren wuerde.
-              </Dialog.Description>
-            </div>
-            <div className="challenge-list">
-              {game.players.map((player, index) => (
-                <button
-                  type="button"
-                  className="challenge-team-card"
-                  disabled={!canChallenge(game, player) || (claimedPlayerIds.has(player.id) && player.id !== claimForSelectedIndex?.playerId)}
-                  key={player.id}
-                  onClick={() => selectClaimTeam(player.id)}
-                  style={{ "--player-color": player.color } as React.CSSProperties}
-                >
-                  <div className="player-card-top">
-                    <span>Team {index + 1}</span>
-                    <RotateCcw size={18} />
+        <Dialog.Overlay className="dialog-overlay" />
+        <Dialog.Content
+          className="dialog-content challenge-dialog"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <div className="dialog-header">
+            <Dialog.Title>Korrektur anmelden</Dialog.Title>
+            <Dialog.Description>
+              Wähle das Team, das die Karte an dieser Luecke einsortieren wuerde.
+            </Dialog.Description>
+          </div>
+          <div className="challenge-list">
+            {game.players.map((player, index) => (
+              <button
+                type="button"
+                className="challenge-team-card player-card readonly"
+                disabled={!canChallenge(game, player) || (claimedPlayerIds.has(player.id) && player.id !== claimForSelectedIndex?.playerId)}
+                key={player.id}
+                onClick={() => selectClaimTeam(player.id)}
+                style={{ "--player-color": player.color } as React.CSSProperties}
+              >
+                <div className="player-card-top">
+                  <span>Team {index + 1}</span>
+                  <RotateCcw size={18} />
+                </div>
+                <TeamAvatar color={player.color} name={player.name} />
+                <strong>{player.name}</strong>
+                <div className="challenge-team-meta">
+                  <div className="coin-row" aria-label={`${player.extraPoints} Korrekturpunkte`}>
+                    {Array.from({ length: player.extraPoints }, (_, coinIndex) => (
+                      <i className="coin active" key={coinIndex} />
+                    ))}
                   </div>
-                  <strong>{player.name}</strong>
-                  <div className="challenge-team-meta">
-                    <div className="coin-row" aria-label={`${player.extraPoints} Korrekturpunkte`}>
-                      {Array.from({ length: 3 }, (_, coinIndex) => (
-                        <i className={coinIndex < player.extraPoints ? "coin active" : "coin"} key={coinIndex} />
-                      ))}
-                    </div>
-                    <small>Korrigiert</small>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div className="dialog-actions">
-              {claimForSelectedIndex ? (
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => {
-                    setClaims((current) => current.filter((claim) => claim.proposedIndex !== selectedCorrectionIndex));
-                    setSelectedCorrectionIndex(undefined);
-                  }}
-                >
-                  Entfernen
-                </button>
-              ) : null}
-              <button className="secondary-button" type="button" onClick={() => setSelectedCorrectionIndex(undefined)}>
-                Abbrechen
+                  <small>Korrigiert</small>
+                </div>
               </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
+            ))}
+          </div>
+          <div className="dialog-actions">
+            {claimForSelectedIndex ? (
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  setClaims((current) => current.filter((claim) => claim.proposedIndex !== selectedCorrectionIndex));
+                  setSelectedCorrectionIndex(undefined);
+                }}
+              >
+                Entfernen
+              </button>
+            ) : null}
+            <button className="secondary-button" type="button" onClick={() => setSelectedCorrectionIndex(undefined)}>
+              Abbrechen
+            </button>
+          </div>
+        </Dialog.Content>
       </Dialog.Root>
     </div>
   );
@@ -2114,15 +2141,7 @@ function RoundResultView({
   const awardedPlayer = game.players.find((player) => player.id === result?.awardedPlayerId);
   const proposedIndex = game.activeRound?.proposedIndex;
   const extraGuessResults = entry ? getExtraGuessResults(game, entry) : [];
-  useFooterActions([
-    {
-      key: "next-round",
-      label: "Nächste Runde",
-      icon: <Play size={16} fill="currentColor" />,
-      variant: "primary",
-      onClick: onNext,
-    },
-  ]);
+  useFooterActions([]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setRevealResult(true), 1050);
@@ -2142,7 +2161,25 @@ function RoundResultView({
             <p>{awardedPlayer ? `Karte für ${awardedPlayer.name}` : "Keine Karte vergeben"}</p>
             <h2>{result?.activePlayerCorrect ? "Richtig" : "Falsch"}</h2>
           </div>
-          {result?.message ? <p>{result.message}</p> : null}
+          <div className="result-box-actions">
+            {result?.message ? <p>{result.message}</p> : null}
+            {extraGuessResults.length > 0 ? (
+              <div className="guess-result-summary">
+                <div className="guess-result-list">
+                  {extraGuessResults.map((guess) => (
+                    <span className={guess.correct ? "guess-result correct" : "guess-result"} key={guess.key}>
+                      {guess.label}: {guess.correct ? "richtig" : "falsch"}
+                    </span>
+                  ))}
+                </div>
+                {result?.extraGuessesCorrect ? <strong>+1 Korrekturpunkt</strong> : null}
+              </div>
+            ) : null}
+            <button className="primary-button" type="button" onClick={onNext}>
+              <Play size={16} fill="currentColor" />
+              Nächste Runde
+            </button>
+          </div>
         </motion.div>
       </div>
       <TimelinePreview
@@ -2210,6 +2247,7 @@ function TimelinePreview({
 function FinishedGame({ game, onArchive }: { game: Game; onArchive: () => void }) {
   const topScore = Math.max(...game.players.map((player) => player.points));
   const winners = game.players.filter((player) => player.points === topScore);
+  const winnerCard = winners.flatMap((winner) => winner.timeline).at(-1);
   useFooterActions([
     {
       key: "archive-game",
@@ -2221,11 +2259,42 @@ function FinishedGame({ game, onArchive }: { game: Game; onArchive: () => void }
   ]);
 
   return (
-    <div className="flow">
-      <div className="result-box">
-        <h1>Spiel beendet</h1>
-        <p>Gewinner: {winners.map((winner) => winner.name).join(", ")}</p>
+    <div className="flow finished-game-flow">
+      <div className="result-box finished-result-box">
+        <div>
+          <p>Spiel beendet</p>
+          <h1>{winners.map((winner) => winner.name).join(", ")}</h1>
+        </div>
+        <span>{topScore} Punkte</span>
       </div>
+      {winnerCard ? (
+        <section className="winner-card-stage">
+          <p>Gewinnerkarte</p>
+          <TimelineCard entry={winnerCard} mode={game.settings.mode} orderKey={game.settings.orderSelector.key} />
+        </section>
+      ) : null}
+      <section className="finished-orders">
+        {game.players.map((player) => (
+          <article className="finished-order-card" key={player.id} style={{ "--player-color": player.color } as React.CSSProperties}>
+            <div className="finished-order-header">
+              <TeamAvatar color={player.color} name={player.name} small />
+              <div>
+                <h2>{player.name}</h2>
+                <p>{player.points} Punkte · {player.timeline.length} Karten</p>
+              </div>
+            </div>
+            {player.timeline.length === 0 ? (
+              <p className="muted">Keine Karten gesammelt.</p>
+            ) : (
+              <div className="finished-order-row">
+                {player.timeline.map((entry) => (
+                  <TimelineCard entry={entry} key={entry.id} mode={game.settings.mode} orderKey={game.settings.orderSelector.key} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
@@ -2675,6 +2744,49 @@ const getAvailableCardsLabel = (mode: GameMode, spotifyCount = 0, replayCount = 
   if (mode === "custom") return String(customCount);
   if (mode !== "spotify-generator") return String(staticModeCardCounts[mode]);
   return `${spotifyCount}+`;
+};
+
+const getScoreDotStyle = (index: number, count: number) => {
+  const spread = Math.min(96, Math.max(28, (count - 1) * 28));
+  const angle = count <= 1 ? 0 : -spread / 2 + (spread * index) / (count - 1);
+  return { "--dot-angle": `${angle}deg` } as React.CSSProperties;
+};
+
+function TeamAvatar({ color, name, small = false }: { color: string; name: string; small?: boolean }) {
+  const avatars = useMemo(
+    () => ({
+      normal: getTeamIconDataUri(name, color),
+      pressed: getTeamIconDataUri(name, color, "bow"),
+      wink: getTeamIconDataUri(name, color, "wink"),
+    }),
+    [color, name],
+  );
+
+  return (
+    <span className={small ? "team-avatar-wrap small" : "team-avatar-wrap"}>
+      <img alt="" className="team-avatar normal" src={avatars.normal} />
+      <img alt="" className="team-avatar wink" src={avatars.wink} />
+      <img alt="" className="team-avatar pressed" src={avatars.pressed} />
+    </span>
+  );
+}
+
+const getTeamIconDataUri = (name: string, color: string, eyes?: "bow" | "wink") => {
+  const seed = `${name.trim() || "Team"}-${color}`;
+  const teamColor = color.replace("#", "");
+  return createAvatar(toonHead, {
+    seed,
+    backgroundColor: [teamColor],
+    clothesColor: [teamColor],
+    ...(eyes ? { eyes: [eyes] } : {}),
+    radius: 50,
+  }).toDataUri();
+};
+
+const getStopConditionSummary = (type: "maxPoints" | "maxRounds" | "leadPoints", value: number) => {
+  if (type === "maxRounds") return `${value} Runden`;
+  if (type === "leadPoints") return `${value} Punkte Vorsprung`;
+  return `${value} Punkte bis Sieg`;
 };
 
 const isAudioCardMode = (mode: GameMode) => mode === "spotify-generator" || mode === "replay";

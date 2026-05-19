@@ -168,6 +168,8 @@ export interface RoundResult {
   challengerWasRight: boolean;
   awardedPlayerId?: string;
   correctionClaims?: RoundCorrectionClaim[];
+  extraGuessesCorrect?: boolean;
+  extraPointAwardedPlayerId?: string;
   message: string;
 }
 

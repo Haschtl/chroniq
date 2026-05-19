@@ -355,7 +355,7 @@ export const createGame = (input: NewGameInput): Game => {
     color: player.color || playerColors[index % playerColors.length],
     points: 0,
     timeline: [],
-    extraPoints: 3,
+    extraPoints: 2,
   }));
 
   return {
@@ -506,6 +506,7 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
   const challenged = correctionClaims.length > 0;
   const challengerWasRight = Boolean(winningClaim) && !activePlayerCorrect;
   const awardedPlayerId = activePlayerCorrect ? activePlayer.id : winningClaim?.playerId;
+  const extraGuessesCorrect = areExtraGuessesCorrect(game, entry);
 
   const result: RoundResult = {
     activePlayerCorrect,
@@ -513,6 +514,8 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     challengerWasRight,
     awardedPlayerId,
     correctionClaims,
+    extraGuessesCorrect,
+    extraPointAwardedPlayerId: extraGuessesCorrect ? activePlayer.id : undefined,
     message: buildResultMessage(activePlayerCorrect, challenged, challengerWasRight),
   };
 
@@ -525,6 +528,10 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     return {
       ...player,
       ...spentChallengePoint,
+      extraPoints:
+        player.id === activePlayer.id && extraGuessesCorrect
+          ? (spentChallengePoint.extraPoints ?? player.extraPoints) + 1
+          : (spentChallengePoint.extraPoints ?? player.extraPoints),
       points: receivesCard ? player.points + 1 : player.points,
       timeline:
         receivesCard && player.id === activePlayer.id
@@ -647,6 +654,26 @@ const buildResultMessage = (activePlayerCorrect: boolean, challenged: boolean, c
   if (activePlayerCorrect) return "Die Korrektur war falsch. Die Karte bleibt beim aktiven Team.";
   if (challengerWasRight) return "Eine Korrektur war richtig. Die Karte geht an das korrigierende Team.";
   return "Keine Korrektur war richtig. Die Karte wird abgelegt.";
+};
+
+const areExtraGuessesCorrect = (game: Game, entry: GuessEntry) => {
+  const selectors = game.settings.extraGuessSelectors;
+  if (selectors.length === 0) return false;
+
+  return selectors.every((selector) => {
+    const value = game.activeRound?.extraGuesses[selector.key]?.trim() ?? "";
+    const expected = String(entry[selector.key] ?? "");
+    return isExtraGuessCorrect(selector.type, value, expected);
+  });
+};
+
+const isExtraGuessCorrect = (type: string, value: string, expected: string) => {
+  if (!value) return false;
+  if (type === "number") return Number(value) === Number(expected);
+  const normalizedValue = value.trim().toLocaleLowerCase();
+  const normalizedExpected = expected.trim().toLocaleLowerCase();
+  if (type === "text-exact") return normalizedValue === normalizedExpected;
+  return normalizedExpected.includes(normalizedValue) || normalizedValue.includes(normalizedExpected);
 };
 
 const isFinished = (game: Game) => {
