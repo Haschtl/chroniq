@@ -6,6 +6,7 @@ import {
 } from "@dnd-kit/core";
 import { toonHead } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import * as Accordion from "@radix-ui/react-accordion";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -181,7 +182,7 @@ function RootLayout() {
   return (
     <FooterActionsContext.Provider value={setFooterActions}>
       <div
-        className={`${isGamePage ? "app-shell game-shell" : "app-shell"} ${state.activeGame ? "has-progress" : ""}`}
+        className={`${isGamePage ? "app-shell game-shell" : "app-shell"} ${canFinishGame ? "has-progress" : ""}`}
         data-theme={state.preferences.theme}
       >
         {!isGamePage ? (
@@ -190,7 +191,7 @@ function RootLayout() {
               <Link to="/" className="brand">
                 ChronIQ
               </Link>
-              {state.activeGame ? (
+              {canFinishGame ? (
                 <div
                   className="header-game-actions"
                   aria-label={translate("header.activeGameActions")}
@@ -312,7 +313,7 @@ function FooterMenu({
           <Menu size={20} />
         </button>
       </DropdownMenu.Trigger>
-      <DropdownMenu.Content align="end" className="footer-menu-content" side="top" sideOffset={10}>
+      <DropdownMenu.Content align="end" className="footer-menu-content" side="top" sideOffset={18}>
           <DropdownMenu.Item
             className="footer-menu-item danger"
             disabled={!canFinishGame}
@@ -1365,7 +1366,7 @@ function PlayerScoreChip({ player, target }: { player: Player; target: number })
           </span>
         </button>
       </DropdownMenu.Trigger>
-      <DropdownMenu.Content align="start" className="player-dropdown" sideOffset={8}>
+      <DropdownMenu.Content align="start" className="player-dropdown" side="top" sideOffset={18}>
           <div className="player-dropdown-header">
             <strong>{player.name}</strong>
             <span>{player.points} Punkte</span>
@@ -1594,7 +1595,7 @@ function SortAndGuess({
             ) : (
               <div className="extra-guess-stage-panel">
                 <div className="dialog-header">
-                  <h2>Extra Guesses</h2>
+                  <h2>Extra-Punkte</h2>
                   <p>Karte wurde einsortiert. Trage die Zusatz-Tipps ein und logge den Guess ein.</p>
                 </div>
                 {game.settings.extraGuessSelectors.length > 0 ? (
@@ -2156,8 +2157,9 @@ function RoundResultView({
           transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
         >
           <div>
-            <p>{awardedPlayer ? `Karte für ${awardedPlayer.name}` : "Keine Karte vergeben"}</p>
-            <h2>{result?.activePlayerCorrect ? "Richtig" : "Falsch"}</h2>
+            {!revealResult?null:
+            <ResultLottie correct={Boolean(result?.activePlayerCorrect)} />
+            }
           </div>
           <div className="result-box-actions">
             {result?.message ? <p>{result.message}</p> : null}
@@ -2191,6 +2193,18 @@ function RoundResultView({
         revealInserted
       />
     </div>
+  );
+}
+
+function ResultLottie({ correct }: { correct: boolean }) {
+  return (
+    <DotLottieReact
+      aria-label={correct ? "Richtig" : "Falsch"}
+      autoplay
+      className="result-lottie"
+      loop={false}
+      src={`${import.meta.env.BASE_URL}animations/${correct ? "Trophy.lottie" : "failedTask.lottie"}`}
+    />
   );
 }
 
@@ -2246,17 +2260,34 @@ function FinishedGame({ game }: { game: Game }) {
   const topScore = Math.max(...game.players.map((player) => player.points));
   const winners = game.players.filter((player) => player.points === topScore);
   const winnerCard = winners.flatMap((winner) => winner.timeline).at(-1);
+  const rankedPlayers = [...game.players].sort((first, second) => second.points - first.points);
+  const podiumPlayers = [rankedPlayers[1], rankedPlayers[0], rankedPlayers[2]].filter(Boolean);
   useFooterActions([]);
 
   return (
     <div className="flow finished-game-flow">
-      <div className="result-box finished-result-box">
-        <div>
-          <p>Spiel beendet</p>
-          <h1>{winners.map((winner) => winner.name).join(", ")}</h1>
+      <section className="finished-podium" aria-label="Endstand">
+        <p>Spiel beendet</p>
+        <div className="podium-stand">
+          {podiumPlayers.map((player) => {
+            const rank = rankedPlayers.findIndex((candidate) => candidate.id === player.id) + 1;
+            return (
+              <article
+                className={`podium-team rank-${rank}`}
+                key={player.id}
+                style={{ "--player-color": player.color } as React.CSSProperties}
+              >
+                <div className="podium-team-meta">
+                  <TeamAvatar color={player.color} name={player.name} small />
+                  <strong>{player.name}</strong>
+                  <span>{player.points} Punkte</span>
+                </div>
+                <div className="podium-step">{rank}</div>
+              </article>
+            );
+          })}
         </div>
-        <span>{topScore} Punkte</span>
-      </div>
+      </section>
       {winnerCard ? (
         <section className="winner-card-stage">
           <p>Gewinnerkarte</p>
@@ -2291,6 +2322,12 @@ function FinishedGame({ game }: { game: Game }) {
 
 function HistoryPage() {
   const state = useAppState();
+  const deleteHistoryEntry = (id: string) => {
+    setState((current) => ({
+      ...current,
+      history: current.history.filter((entry) => entry.id !== id),
+    }));
+  };
 
   return (
     <section className="panel history-panel">
@@ -2304,6 +2341,14 @@ function HistoryPage() {
         <div className="history-list">
           {state.history.map((game) => (
             <article className="history-item" key={game.id}>
+              <button
+                aria-label={`${game.name} löschen`}
+                className="history-delete-button"
+                type="button"
+                onClick={() => deleteHistoryEntry(game.id)}
+              >
+                <Trash2 size={15} />
+              </button>
               <div>
                 <h2>{game.name}</h2>
                 <p>
@@ -2410,8 +2455,16 @@ function SettingsPage() {
           </label>
         </div>
       </section>
-      <div className="connector-list">
-        <form className="connector-card" onSubmit={connectSpotify}>
+      <section className="settings-card connector-main-card">
+        <div>
+          <h2>Connectoren</h2>
+          <p>Dienste, die Spielmodi mit externen Daten versorgen.</p>
+        </div>
+        <div className="connector-list">
+          <form className="connector-card" onSubmit={connectSpotify}>
+          <span className={configuredSpotifyConnector ? "status-dot configured" : "status-dot"}>
+            {configuredSpotifyConnector ? translate("settings.active") : translate("settings.open")}
+          </span>
           <div>
             <h2>Spotify</h2>
             <p>
@@ -2420,9 +2473,6 @@ function SettingsPage() {
                 : translate("settings.spotifyRequired")}
             </p>
           </div>
-          <span className={configuredSpotifyConnector ? "status-dot configured" : "status-dot"}>
-            {configuredSpotifyConnector ? translate("settings.active") : translate("settings.open")}
-          </span>
           <div className="connector-form">
             {!spotifyClientConfigured ? (
               <div className="setup-note">
@@ -2462,8 +2512,9 @@ function SettingsPage() {
               </button>
             </div>
           </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      </section>
     </section>
   );
 }
@@ -2489,7 +2540,7 @@ function SpotifyCallbackPage() {
     }
 
     completeSpotifyAuthorization(code, state)
-      .then((connector) => {
+      .then(({ connector, returnTo }) => {
         setState((current) => ({
           ...current,
           connectors: [
@@ -2498,7 +2549,7 @@ function SpotifyCallbackPage() {
           ],
         }));
         setMessage("Spotify ist verbunden.");
-        navigate({ to: "/settings", replace: true });
+        navigate({ to: returnTo, replace: true });
       })
       .catch((authError) => {
         setError(authError instanceof Error ? authError.message : "Spotify Verbindung fehlgeschlagen.");
@@ -3133,7 +3184,7 @@ const phaseLabel = (phase: Game["phase"]) =>
     "pick-card": "Karte ziehen",
     "present-card": "Präsentieren",
     "place-card": "Einsortieren",
-    "extra-guesses": "Extra Guesses",
+    "extra-guesses": "Extra-Punkte",
     challenge: "Korrektur",
     "round-result": "Auflösung",
     finished: "Beendet",

@@ -516,7 +516,14 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     correctionClaims,
     extraGuessesCorrect,
     extraPointAwardedPlayerId: extraGuessesCorrect ? activePlayer.id : undefined,
-    message: buildResultMessage(activePlayerCorrect, challenged, challengerWasRight, winningClaim?.playerId, game.players),
+    message: buildResultMessage(
+      activePlayerCorrect,
+      challenged,
+      challengerWasRight,
+      activePlayer.id,
+      winningClaim?.playerId,
+      game.players,
+    ),
   };
 
   const players = game.players.map((player) => {
@@ -588,9 +595,14 @@ export const archiveFinishedGame = (state: AppState): AppState => {
     return state;
   }
 
+  const summary = toSummary(state.activeGame);
+  if ((summary.replayEntries?.length ?? 0) === 0) {
+    return state;
+  }
+
   return {
     ...state,
-    history: [toSummary(state.activeGame), ...state.history],
+    history: [summary, ...state.history],
   };
 };
 
@@ -655,12 +667,14 @@ const buildResultMessage = (
   activePlayerCorrect: boolean,
   challenged: boolean,
   challengerWasRight = false,
+  activePlayerId?: string,
   winningPlayerId?: string,
   players: Player[] = [],
 ) => {
-  if (!challenged && activePlayerCorrect) return "Richtig einsortiert. Die Karte geht an das aktive Team.";
+  const activePlayer = players.find((player) => player.id === activePlayerId);
+  if (!challenged && activePlayerCorrect) return `Richtig einsortiert. Die Karte geht an ${activePlayer?.name ?? "das aktive Team"}.`;
   if (!challenged) return "Nicht korrekt einsortiert. Die Karte wird abgelegt.";
-  if (activePlayerCorrect) return "Die Korrektur war falsch. Die Karte bleibt beim aktiven Team.";
+  if (activePlayerCorrect) return `Die Korrektur war falsch. Die Karte bleibt bei ${activePlayer?.name ?? "dem aktiven Team"}.`;
   if (challengerWasRight) {
     const winningPlayer = players.find((player) => player.id === winningPlayerId);
     return `Eine Korrektur war richtig. Die Karte geht an ${winningPlayer?.name ?? "das korrigierende Team"}.`;

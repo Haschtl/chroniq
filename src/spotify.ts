@@ -15,6 +15,7 @@ interface SpotifyOAuthSession {
   codeVerifier: string;
   state: string;
   redirectUri: string;
+  returnTo: string;
   createdAt: string;
 }
 
@@ -143,6 +144,7 @@ export const startSpotifyAuthorization = async () => {
     codeVerifier,
     state,
     redirectUri,
+    returnTo: getCurrentReturnPath(),
     createdAt: new Date().toISOString(),
   };
   window.sessionStorage.setItem(OAUTH_STORAGE_KEY, JSON.stringify(session));
@@ -160,7 +162,7 @@ export const startSpotifyAuthorization = async () => {
   window.location.assign(`${AUTHORIZE_URL}?${params.toString()}`);
 };
 
-export const completeSpotifyAuthorization = async (code: string, state: string): Promise<DataConnector> => {
+export const completeSpotifyAuthorization = async (code: string, state: string): Promise<{ connector: DataConnector; returnTo: string }> => {
   const session = readOAuthSession();
   if (!session) {
     throw new Error("Spotify Login-Session fehlt. Starte die Verbindung erneut.");
@@ -193,24 +195,27 @@ export const completeSpotifyAuthorization = async (code: string, state: string):
 
   const now = new Date();
   return {
-    id: "connector_spotify_primary",
-    kind: "spotify",
-    label: "Spotify",
-    status: "configured",
-    clientId: session.clientId,
-    auth: {
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
-      expiresAt: new Date(now.getTime() + token.expires_in * 1000).toISOString(),
-      scope: token.scope,
-      tokenType: token.token_type,
+    connector: {
+      id: "connector_spotify_primary",
+      kind: "spotify",
+      label: "Spotify",
+      status: "configured",
+      clientId: session.clientId,
+      auth: {
+        accessToken: token.access_token,
+        refreshToken: token.refresh_token,
+        expiresAt: new Date(now.getTime() + token.expires_in * 1000).toISOString(),
+        scope: token.scope,
+        tokenType: token.token_type,
+      },
+      account: {
+        id: profile.id,
+        displayName: profile.display_name,
+      },
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     },
-    account: {
-      id: profile.id,
-      displayName: profile.display_name,
-    },
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
+    returnTo: sanitizeReturnPath(session.returnTo),
   };
 };
 
@@ -741,4 +746,19 @@ const joinBasePath = (path: string) => {
   const base = APP_BASE_PATH.endsWith("/") ? APP_BASE_PATH : `${APP_BASE_PATH}/`;
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
   return `${base}${cleanPath}`;
+};
+
+const getCurrentReturnPath = () => {
+  const base = APP_BASE_PATH.endsWith("/") ? APP_BASE_PATH.slice(0, -1) : APP_BASE_PATH;
+  const fullPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (base && base !== "/" && fullPath.startsWith(base)) {
+    return fullPath.slice(base.length) || "/";
+  }
+  return fullPath || "/";
+};
+
+const sanitizeReturnPath = (path: string | undefined) => {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return "/";
+  if (path.startsWith("/connectors/spotify/callback")) return "/settings";
+  return path;
 };

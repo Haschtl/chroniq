@@ -33,6 +33,32 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-color: color-mix(in srgb, var(--muted) 46%, transparent) color-mix(in srgb, var(--card-muted) 48%, transparent);
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--card-muted) 48%, transparent);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 42%, var(--border));
+  border: 2px solid color-mix(in srgb, var(--card) 72%, transparent);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 42%, var(--muted));
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 body {
@@ -181,6 +207,7 @@ a {
   align-items: center;
   background: color-mix(in srgb, var(--card) 76%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 10px;
   color: var(--foreground);
   display: inline-flex;
   height: 25.2px;
@@ -188,7 +215,7 @@ a {
   transition:
     background 0.18s ease,
     transform 0.18s ease;
-  width: 34px;
+  width: 25px;
 }
 
 .header-game-action:hover {
@@ -1596,8 +1623,13 @@ input[type="color"] {
   align-items: stretch;
   display: flex;
   gap: 0;
+  justify-content: safe center;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   overflow-x: auto;
-  padding: 8px 0 12px;
+  padding: 8px 14px 12px;
+  scroll-padding-inline: 14px;
+  width: 100vw;
 }
 
 .timeline-row.preview {
@@ -1719,7 +1751,7 @@ input[type="color"] {
 }
 
 .result-box {
-  align-items: end;
+  align-items: center;
   background: color-mix(in srgb, var(--card) 76%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
   border-radius: 8px;
@@ -1729,10 +1761,24 @@ input[type="color"] {
   padding: 14px;
 }
 
+.result-box > div:first-child {
+  align-items: center;
+  align-self: stretch;
+  display: grid;
+  justify-items: start;
+}
+
 .result-box h2 {
   font-size: clamp(2.4rem, 9vw, 6rem);
   line-height: 0.88;
   margin: 0;
+}
+
+.result-lottie {
+  display: block;
+  height: clamp(170px, 28vw, 280px);
+  margin: -28px 0;
+  width: clamp(140px, 22vw, 220px);
 }
 
 .result-box p {
@@ -1759,6 +1805,34 @@ input[type="color"] {
   border-radius: 8px;
   color: var(--foreground);
   padding: 14px;
+  position: relative;
+}
+
+.history-delete-button {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  color: var(--danger);
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 32px;
+}
+
+.history-delete-button:hover,
+.history-delete-button:focus-visible {
+  background: color-mix(in srgb, var(--danger) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--danger) 48%, var(--border));
+  outline: 0;
+}
+
+.history-item > div:first-of-type {
+  padding-right: 42px;
 }
 
 .result-flow {
@@ -1769,23 +1843,92 @@ input[type="color"] {
   gap: 18px;
 }
 
-.finished-result-box {
-  align-items: center;
+.finished-podium {
+  background: color-mix(in srgb, var(--card) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 14px;
+  display: grid;
+  gap: 16px;
+  padding: clamp(16px, 4vw, 26px);
 }
 
-.finished-result-box h1 {
-  font-size: clamp(2rem, 8vw, 4.8rem);
-  line-height: 0.95;
-  margin: 0;
-}
-
-.finished-result-box > span {
-  background: var(--foreground);
-  border-radius: 999px;
-  color: var(--background);
+.finished-podium > p {
+  color: var(--muted);
+  font-size: 0.82rem;
   font-weight: 900;
-  padding: 8px 12px;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.podium-stand {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.podium-team {
+  align-content: end;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.podium-team-meta {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.podium-team-meta strong,
+.podium-team-meta span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.podium-team-meta strong {
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.podium-team-meta span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.podium-step {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--player-color) 34%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--player-color) 58%, var(--card)), color-mix(in srgb, var(--player-color) 34%, var(--card-muted)));
+  border: 1px solid color-mix(in srgb, var(--player-color) 60%, var(--border));
+  border-radius: 12px 12px 6px 6px;
+  color: var(--foreground);
+  display: flex;
+  font-size: clamp(1.8rem, 8vw, 3.8rem);
+  font-weight: 950;
+  justify-content: center;
+  min-height: 88px;
+  padding: 12px;
+}
+
+.podium-team.rank-1 .podium-step {
+  min-height: 140px;
+}
+
+.podium-team.rank-2 .podium-step {
+  min-height: 108px;
+}
+
+.podium-team.rank-3 .podium-step {
+  min-height: 82px;
 }
 
 .winner-card-stage {
@@ -2448,6 +2591,18 @@ input[type="color"] {
   max-width: 960px;
 }
 
+.history-panel .section-heading {
+  margin-bottom: 18px;
+}
+
+.connectors-panel .section-heading {
+  margin-bottom: 18px;
+}
+
+.history-panel > .ghost-button {
+  margin-top: 18px;
+}
+
 .history-item,
 .connector-card {
   display: grid;
@@ -2455,9 +2610,10 @@ input[type="color"] {
 }
 
 .settings-card {
-  background: #f7f4ed;
-  border: 1px solid #ded5c6;
+  background: color-mix(in srgb, var(--card-muted) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 8px;
+  color: var(--foreground);
   display: grid;
   gap: 16px;
   margin-bottom: 16px;
@@ -2465,7 +2621,11 @@ input[type="color"] {
 }
 
 .settings-card p {
-  color: #6f6a61;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.connector-main-card {
   margin-bottom: 0;
 }
 
@@ -2477,31 +2637,41 @@ input[type="color"] {
 
 .connector-card {
   align-items: center;
-  background: #f7f4ed;
-  border: 1px solid #ded5c6;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 8px;
-  grid-template-columns: 1fr auto auto;
+  color: var(--foreground);
+  grid-template-columns: 1fr;
   padding: 16px;
+  position: relative;
 }
 
 .connector-card p {
-  color: #6f6a61;
+  color: var(--muted);
   margin-bottom: 0;
 }
 
+.connector-card > div:first-of-type {
+  padding-right: 96px;
+}
+
 .status-dot {
-  border: 1px solid #cfc5b4;
+  background: color-mix(in srgb, var(--card-muted) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   border-radius: 999px;
-  color: #6f6a61;
+  color: var(--muted);
   font-size: 0.85rem;
   font-weight: 850;
   padding: 6px 10px;
+  position: absolute;
+  right: 12px;
+  top: 12px;
 }
 
 .status-dot.configured {
-  background: #eef5ef;
-  border-color: #71a87b;
-  color: #244a2a;
+  background: color-mix(in srgb, #47a66b 16%, transparent);
+  border-color: color-mix(in srgb, #47a66b 58%, var(--border));
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
 }
 
 .connector-form {
@@ -2529,6 +2699,18 @@ input[type="color"] {
   :root {
     --entry-play-card-width: min(150px, 38vw);
     --entry-song-card-size: min(220px, 58vw);
+  }
+
+  main {
+    padding: calc(12px + 46px) 12px calc(12px + 86px);
+  }
+
+  .has-progress main {
+    padding-top: 46px;
+  }
+
+  .game-shell main {
+    padding: 0 0 92px;
   }
 
   .topbar,
@@ -2568,5 +2750,39 @@ input[type="color"] {
 
   .sort-card {
     width: min(150px, 38vw);
+  }
+
+  .podium-stand {
+    gap: 6px;
+  }
+
+  .podium-team-meta .team-avatar-wrap.small {
+    height: 40px;
+    width: 40px;
+  }
+
+  .podium-team-meta strong {
+    font-size: 0.9rem;
+  }
+
+  .podium-team-meta span {
+    font-size: 0.78rem;
+  }
+
+  .podium-step {
+    border-radius: 10px 10px 5px 5px;
+    padding: 8px;
+  }
+
+  .podium-team.rank-1 .podium-step {
+    min-height: 112px;
+  }
+
+  .podium-team.rank-2 .podium-step {
+    min-height: 88px;
+  }
+
+  .podium-team.rank-3 .podium-step {
+    min-height: 70px;
   }
 }
