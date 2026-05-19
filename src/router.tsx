@@ -743,11 +743,11 @@ function HomePage() {
                     }}
                   >
                     <X size={15} />
-                    Abwaehlen
+                    Abwählen
                   </button>
                   <div className="spotify-preload-row">
                     <span>
-                      {spotifyEntries.length} Karten vorgeladen{spotifyExhausted ? " · Quelle ausgeschoepft" : ""}
+                      {spotifyEntries.length} Karten vorgeladen{spotifyExhausted ? " · Quelle ausgeschöpft" : ""}
                     </span>
                     <button
                       className="secondary-button"
@@ -756,7 +756,7 @@ function HomePage() {
                       onClick={preloadSpotifyBatch}
                     >
                       <Download size={15} />
-                      {spotifyPreloadLoading ? "Laedt..." : "Batch nachladen"}
+                      {spotifyPreloadLoading ? "Lädt..." : "Batch nachladen"}
                     </button>
                   </div>
                 </div>
@@ -780,7 +780,7 @@ function HomePage() {
                     </button>
                   ))}
                 </div>
-              ) : spotifyLookupLoading ? <p className="muted">Suche laeuft...</p> : null}
+              ) : spotifyLookupLoading ? <p className="muted">Suche läuft...</p> : null}
             </div>
           ) : null}
           {mode === "custom" ? (
@@ -800,7 +800,7 @@ function HomePage() {
                 </label>
                 <button className="secondary-button custom-load-button" type="button" onClick={loadCustomUrl} disabled={customUrlLoading}>
                   <LinkIcon size={15} />
-                  {customUrlLoading ? "Laedt..." : "URL laden"}
+                  {customUrlLoading ? "Lädt..." : "URL laden"}
                 </button>
               </div>
               {customLoadError ? <p className="form-error">{customLoadError}</p> : null}
@@ -855,7 +855,7 @@ function HomePage() {
             <label className="field">
               Historie
               <select value={replayHistoryId} onChange={(event) => setReplayHistoryId(event.target.value)}>
-                <option value="">Replay auswaehlen</option>
+                <option value="">Replay auswählen</option>
                 {state.history
                   .filter((entry) => (entry.replayEntries?.length ?? 0) > 0)
                   .map((entry) => (
@@ -923,17 +923,17 @@ function HomePage() {
                   </div>
                   <Link className="secondary-button" to="/settings">
                     <Settings size={15} />
-                    Settings oeffnen
+                    Settings öffnen
                   </Link>
                 </div>
               </Accordion.Content>
             </Accordion.Item>
           </Accordion.Root>
 
-          {requiredSeedMissing ? <p className="form-error">Spotify Seed aus der Suche auswaehlen.</p> : null}
+          {requiredSeedMissing ? <p className="form-error">Spotify Seed aus der Suche auswählen.</p> : null}
           {autoquartettLoadError ? <p className="form-error">{autoquartettLoadError}</p> : null}
-          {requiredReplayMissing ? <p className="form-error">Replay aus der Historie auswaehlen.</p> : null}
-          {requiredCustomMissing ? <p className="form-error">Custom-Datei laden und Mapping auswaehlen.</p> : null}
+          {requiredReplayMissing ? <p className="form-error">Replay aus der Historie auswählen.</p> : null}
+          {requiredCustomMissing ? <p className="form-error">Custom-Datei laden und Mapping auswählen.</p> : null}
           <button
             className="primary-button start-button"
             type="submit"
@@ -1202,7 +1202,7 @@ function CustomColumnSelect({
           })
         }
       >
-        <option value="">{required ? "Spalte auswaehlen" : "Nicht verwenden"}</option>
+        <option value="">{required ? "Spalte auswählen" : "Nicht verwenden"}</option>
         {customSetup.columns.map((column) => (
           <option key={column} value={column}>
             {column}
@@ -1259,14 +1259,14 @@ function RequiredConnectorDialog({
           ) : null}
           {unsupportedDevOrigin ? (
             <p className="form-error">
-              Spotify akzeptiert localhost nicht. Oeffne die App ueber 127.0.0.1 und trage dieselbe Redirect URI im Spotify Dashboard ein.
+              Spotify akzeptiert localhost nicht. Öffne die App ueber 127.0.0.1 und trage dieselbe Redirect URI im Spotify Dashboard ein.
             </p>
           ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <div className="dialog-actions">
             {unsupportedDevOrigin ? (
               <a className="secondary-button" href={getSpotifySafeDevUrl()}>
-                Mit 127.0.0.1 oeffnen
+                Mit 127.0.0.1 öffnen
               </a>
             ) : null}
             <button className="primary-button" type="button" disabled={!spotifyClientConfigured || connecting} onClick={onReconnect}>
@@ -1606,7 +1606,7 @@ function SortAndGuess({
                 ))}
               </div>
             ) : (
-              <p className="muted">Keine Extra-Guesses fuer diesen Modus.</p>
+              <p className="muted">Keine Extra-Guesses für diesen Modus.</p>
             )}
             <div className="dialog-actions">
               <button className="secondary-button" type="button" onClick={resetPlacement}>
@@ -1808,8 +1808,6 @@ function PlayCard({
               {paused ? <Play size={32} fill="currentColor" /> : <Pause size={32} fill="currentColor" />}
             </button>
             <div>
-              <strong>Song-Karte</strong>
-              <span>Audio hoeren und einsortieren</span>
             </div>
             {children}
           </div>
@@ -1980,7 +1978,7 @@ function Challenge({ game, onResolve }: { game: Game; onResolve: (claims?: Round
             <div className="dialog-header">
               <Dialog.Title>Korrektur anmelden</Dialog.Title>
               <Dialog.Description>
-                Waehle das Team, das die Karte an dieser Luecke einsortieren wuerde.
+                Wähle das Team, das die Karte an dieser Luecke einsortieren wuerde.
               </Dialog.Description>
             </div>
             <div className="challenge-list">
@@ -2119,7 +2117,7 @@ function RoundResultView({
   useFooterActions([
     {
       key: "next-round",
-      label: "Naechste Runde",
+      label: "Nächste Runde",
       icon: <Play size={16} fill="currentColor" />,
       variant: "primary",
       onClick: onNext,
@@ -2141,7 +2139,7 @@ function RoundResultView({
           transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
         >
           <div>
-            <p>{awardedPlayer ? `Karte fuer ${awardedPlayer.name}` : "Keine Karte vergeben"}</p>
+            <p>{awardedPlayer ? `Karte für ${awardedPlayer.name}` : "Keine Karte vergeben"}</p>
             <h2>{result?.activePlayerCorrect ? "Richtig" : "Falsch"}</h2>
           </div>
           {result?.message ? <p>{result.message}</p> : null}
@@ -2266,7 +2264,7 @@ function HistoryPage() {
       )}
       <button className="ghost-button" onClick={resetState}>
         <Trash2 size={15} />
-        Lokale Daten zuruecksetzen
+        Lokale Daten zurücksetzen
       </button>
     </section>
   );
@@ -2427,7 +2425,7 @@ function SpotifyCallbackPage() {
       return;
     }
     if (!code || !state) {
-      setError("Spotify Callback enthaelt keinen Code.");
+      setError("Spotify Callback enthält keinen Code.");
       return;
     }
 
@@ -2454,7 +2452,7 @@ function SpotifyCallbackPage() {
       <p>{error || message}</p>
       {error ? (
         <Link className="primary-button" to="/settings">
-          Zurueck zu Settings
+          Zurück zu Settings
         </Link>
       ) : null}
     </section>
@@ -2472,7 +2470,7 @@ function AudioPresentation({ entry, compact = false }: { entry: GuessEntry; comp
       {isAudioValue(audio) ? (
         <audio controls preload="none" src={audio.url} aria-label="Audio der gezogenen Karte" />
       ) : (
-        <p className="muted">Keine Audioquelle fuer diese Karte vorhanden.</p>
+        <p className="muted">Keine Audioquelle für diese Karte vorhanden.</p>
       )}
     </article>
   );
@@ -2656,9 +2654,9 @@ const modeLabels: Record<GameMode, string> = {
 };
 
 const modeDescriptions: Record<GameMode, string> = {
-  "spotify-generator": "Audio hoeren, Jahr einsortieren, Titel und Artist raten.",
+  "spotify-generator": "Song hören, Jahr einordnen, Titel und Künstler raten.",
   "image-art": "Bild sehen, Jahr einsortieren und Kuenstler raten.",
-  autoquartett: "Auto sehen, PS einsortieren, Baujahr danach aufloesen.",
+  autoquartett: "Auto sehen, PS einsortieren, Baujahr danach auflösen.",
   replay: "Karten aus einem archivierten Spiel erneut spielen.",
   custom: "Eigene CSV-Datei laden und Spalten auf Karten mappen.",
 };
@@ -2692,7 +2690,7 @@ const stopConditionOptions = [
   {
     type: "maxRounds" as const,
     label: "Runden",
-    description: "Nach fester Rundenzahl gewinnt der hoechste Score.",
+    description: "Nach fester Rundenzahl gewinnt der höchste Score.",
     valueLabel: "Maximale Runden",
     defaultValue: 12,
   },
@@ -2700,7 +2698,7 @@ const stopConditionOptions = [
     type: "leadPoints" as const,
     label: "Vorsprung",
     description: "Spiel endet bei genug Abstand zum Feld.",
-    valueLabel: "Noetiger Vorsprung",
+    valueLabel: "Nötiger Vorsprung",
     defaultValue: 3,
   },
 ];
@@ -2734,7 +2732,7 @@ const translations = {
     "nav.settings": "Settings",
     "footer.newGame": "Neues Spiel",
     "footer.history": "Verlauf",
-    "footer.menu": "Menue",
+    "footer.menu": "Menü",
     "footer.finishGame": "Spiel beenden",
     "footer.menuHistory": "Historie",
     "footer.settings": "Einstellungen",
@@ -2753,15 +2751,15 @@ const translations = {
     "settings.language": "Sprache",
     "settings.spotifyConnected": "Verbunden",
     "settings.as": "als",
-    "settings.spotifyRequired": "Noetig fuer den Spotify-Generator.",
+    "settings.spotifyRequired": "Nötig für den Spotify-Generator.",
     "settings.active": "aktiv",
     "settings.open": "offen",
     "settings.spotifyConfigMissing": "Spotify App-Konfiguration fehlt",
     "settings.spotifyConfigHint": "Setze VITE_SPOTIFY_CLIENT_ID in .env.local. Die Client ID bekommst du im Spotify Developer Dashboard.",
-    "settings.openDashboard": "Dashboard oeffnen",
+    "settings.openDashboard": "Dashboard öffnen",
     "settings.localhostUnsupported": "localhost wird von Spotify nicht akzeptiert",
-    "settings.localhostHint": "Oeffne die App fuer den Spotify-Login ueber die Loopback-IP. Trage im Spotify Dashboard dieselbe Redirect URI ein.",
-    "settings.openLoopback": "Mit 127.0.0.1 oeffnen",
+    "settings.localhostHint": "Öffne die App für den Spotify-Login über die Loopback-IP. Trage im Spotify Dashboard dieselbe Redirect URI ein.",
+    "settings.openLoopback": "Mit 127.0.0.1 öffnen",
     "settings.disconnect": "Trennen",
     "settings.reconnect": "Neu verbinden",
     "settings.connectSpotify": "Mit Spotify verbinden",
@@ -3031,10 +3029,10 @@ const getTimelinePreviewEntries = (timeline: GuessEntry[], entry?: GuessEntry, i
 const phaseLabel = (phase: Game["phase"]) =>
   ({
     "pick-card": "Karte ziehen",
-    "present-card": "Praesentieren",
+    "present-card": "Präsentieren",
     "place-card": "Einsortieren",
     "extra-guesses": "Extra Guesses",
     challenge: "Korrektur",
-    "round-result": "Aufloesung",
+    "round-result": "Auflösung",
     finished: "Beendet",
   })[phase];
