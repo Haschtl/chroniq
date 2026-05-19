@@ -1,6 +1,6 @@
 import * as Accordion from "@radix-ui/react-accordion";
 import { Check, Download } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generateEntriesForGenerator } from "../../generators";
 import {
   getSpotifySeedPreview,
@@ -193,6 +193,14 @@ export function SpotifyGeneratorSetup({
   setup: ReturnType<typeof useSpotifySetup>;
   spotifyConnector?: DataConnector;
 }) {
+  const syncedPreviewTypeRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!setup.preview || syncedPreviewTypeRef.current === setup.preview.type) return;
+    syncedPreviewTypeRef.current = setup.preview.type;
+    setup.setAdvanced(adjustExtraGuessKeysForSeedType(setup.advanced, setup.preview.type));
+  }, [setup.preview?.type]);
+
   const connectSpotifyFromSeed = async () => {
     if (spotifyConnector) return;
     setup.setLookupError("");
@@ -268,6 +276,7 @@ export function SpotifyGeneratorSetup({
               onClick={() => {
                 setup.setPreview(result);
                 setup.setSeed(result.externalUrl);
+                setup.setAdvanced(adjustExtraGuessKeysForSeedType(setup.advanced, result.type));
                 setup.setQuery("");
                 setup.setResults([]);
                 setup.clearPreload();
@@ -281,6 +290,17 @@ export function SpotifyGeneratorSetup({
       <SpotifyAdvancedOptions value={setup.advanced} onChange={setup.setAdvanced} />
     </div>
   );
+}
+
+function adjustExtraGuessKeysForSeedType(
+  advanced: SpotifyAdvancedSettings,
+  seedType: SpotifySeedPreview["type"],
+): SpotifyAdvancedSettings {
+  const withoutArtist = advanced.extraGuessKeys.filter((key) => key !== "artist");
+  return {
+    ...advanced,
+    extraGuessKeys: seedType === "artist" ? withoutArtist : [...withoutArtist, "artist"],
+  };
 }
 
 function SpotifySeedCard({
@@ -348,24 +368,32 @@ function SpotifyAdvancedOptions({
           <Accordion.Trigger className="spotify-advanced-trigger">
             <span>Advanced</span>
             <small>
-              {cardBackKeys.map((key) => spotifyCardKeyLabels[key]).join(" + ")} · {spotifyOrderLabels[value.orderKey]} · {value.cardFrontKeys.length} Card-Front
+              {cardBackKeys.map((key) => spotifyCardKeyLabels[key]).join(" + ")}{" "}
+              · {spotifyOrderLabels[value.orderKey]} ·{" "}
+              {value.cardFrontKeys.length} Card-Front
             </small>
             <b aria-hidden="true">⌄</b>
           </Accordion.Trigger>
         </Accordion.Header>
         <Accordion.Content className="spotify-advanced-content">
           <div className="spotify-display-options" aria-label="Card-Back-Keys">
-            <span>Card-Back-Keys</span>
+            <span>Karten-Rückseite</span>
             <div>
               {spotifyCardBackOptions.map((option) => (
                 <label
-                  className={cardBackKeys.includes(option.key) ? "spotify-display-chip active" : "spotify-display-chip"}
+                  className={
+                    cardBackKeys.includes(option.key)
+                      ? "spotify-display-chip active"
+                      : "spotify-display-chip"
+                  }
                   key={option.key}
                 >
                   <input
                     checked={cardBackKeys.includes(option.key)}
                     type="checkbox"
-                    onChange={(event) => updateCardBackKey(option.key, event.target.checked)}
+                    onChange={(event) =>
+                      updateCardBackKey(option.key, event.target.checked)
+                    }
                   />
                   <span className="spotify-display-check" aria-hidden="true">
                     <Check size={12} strokeWidth={3} />
@@ -376,8 +404,14 @@ function SpotifyAdvancedOptions({
             </div>
           </div>
           <div className="spotify-advanced-grid">
+            <div
+              className="spotify-display-options p-0"
+              style={{ padding: 0, borderTopWidth: 0 }}
+              aria-label="Card-Back-Keys"
+            >
+              <span>Sortieren nach</span>
+            </div>
             <label className="field">
-              Order-Key
               <select
                 value={value.orderKey}
                 onChange={(event) =>
@@ -388,23 +422,34 @@ function SpotifyAdvancedOptions({
                 }
               >
                 {spotifyOrderOptions.map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
                 ))}
               </select>
             </label>
           </div>
-          <div className="spotify-display-options" aria-label="Card-Front-Keys">
-            <span>Card-Front-Keys</span>
+          <div
+            className="spotify-display-options"
+            aria-label="Extra-Guess-Keys"
+          >
+            <span>Daten raten</span>
             <div>
-              {spotifyCardFrontOptions.map((option) => (
+              {spotifyExtraGuessOptions.map((option) => (
                 <label
-                  className={value.cardFrontKeys.includes(option.key) ? "spotify-display-chip active" : "spotify-display-chip"}
+                  className={
+                    value.extraGuessKeys.includes(option.key)
+                      ? "spotify-display-chip active"
+                      : "spotify-display-chip"
+                  }
                   key={option.key}
                 >
                   <input
-                    checked={value.cardFrontKeys.includes(option.key)}
+                    checked={value.extraGuessKeys.includes(option.key)}
                     type="checkbox"
-                    onChange={(event) => updateCardFrontKey(option.key, event.target.checked)}
+                    onChange={(event) =>
+                      updateExtraGuessKey(option.key, event.target.checked)
+                    }
                   />
                   <span className="spotify-display-check" aria-hidden="true">
                     <Check size={12} strokeWidth={3} />
@@ -414,18 +459,24 @@ function SpotifyAdvancedOptions({
               ))}
             </div>
           </div>
-          <div className="spotify-display-options" aria-label="Extra-Guess-Keys">
-            <span>Extra-Guess-Keys</span>
+          <div className="spotify-display-options" aria-label="Card-Front-Keys">
+            <span>Karten-Vorderseite</span>
             <div>
-              {spotifyExtraGuessOptions.map((option) => (
+              {spotifyCardFrontOptions.map((option) => (
                 <label
-                  className={value.extraGuessKeys.includes(option.key) ? "spotify-display-chip active" : "spotify-display-chip"}
+                  className={
+                    value.cardFrontKeys.includes(option.key)
+                      ? "spotify-display-chip active"
+                      : "spotify-display-chip"
+                  }
                   key={option.key}
                 >
                   <input
-                    checked={value.extraGuessKeys.includes(option.key)}
+                    checked={value.cardFrontKeys.includes(option.key)}
                     type="checkbox"
-                    onChange={(event) => updateExtraGuessKey(option.key, event.target.checked)}
+                    onChange={(event) =>
+                      updateCardFrontKey(option.key, event.target.checked)
+                    }
                   />
                   <span className="spotify-display-check" aria-hidden="true">
                     <Check size={12} strokeWidth={3} />

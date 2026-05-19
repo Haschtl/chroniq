@@ -375,9 +375,10 @@
 
 .play-panel > .flow,
 .play-panel > form.flow {
-  align-self: start;
+  align-self: stretch;
   margin: 0 auto;
   max-width: 980px;
+  min-height: 0;
   width: 100%;
 }
 
@@ -390,6 +391,19 @@
 
 .pick-flow {
   gap: 22px;
+}
+
+.pick-flow,
+.result-flow {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.pick-flow > .timeline-preview,
+.result-flow > .timeline-preview {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .round-card-stage {
@@ -548,13 +562,6 @@
 }
 
 .timeline-card.inserted .play-card {
-  box-shadow:
-    0 0 0 3px rgba(245, 211, 93, 0.85),
-    0 24px 58px rgba(20, 20, 20, 0.3);
-  transition: box-shadow 440ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.timeline-card.inserted .song-card {
   box-shadow: none;
   perspective: 1400px;
 }
@@ -567,13 +574,6 @@
 }
 
 .timeline-card.inserted.correct .play-card {
-  box-shadow:
-    0 0 0 4px rgba(71, 166, 107, 0.92),
-    0 0 36px rgba(71, 166, 107, 0.42),
-    0 24px 58px rgba(20, 20, 20, 0.3);
-}
-
-.timeline-card.inserted.correct .song-card {
   box-shadow: none;
 }
 
@@ -585,13 +585,6 @@
 }
 
 .timeline-card.inserted.wrong .play-card {
-  box-shadow:
-    0 0 0 4px rgba(217, 79, 112, 0.94),
-    0 0 36px rgba(217, 79, 112, 0.42),
-    0 24px 58px rgba(20, 20, 20, 0.3);
-}
-
-.timeline-card.inserted.wrong .song-card {
   box-shadow: none;
 }
 
@@ -650,9 +643,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
   border-radius: 8px;
   display: flex;
-  gap: 18px;
+  gap: 12px;
   justify-content: space-between;
-  padding: 14px;
+  padding: 10px;
 }
 
 .result-box > div:first-child {
@@ -670,9 +663,9 @@
 
 .result-lottie {
   display: block;
-  height: clamp(170px, 28vw, 280px);
-  margin: -28px 0;
-  width: clamp(140px, 22vw, 220px);
+  height: clamp(112px, 20vw, 190px);
+  margin: -20px 0;
+  width: clamp(86px, 16vw, 150px);
 }
 
 .result-box p {
@@ -684,7 +677,7 @@
 .result-box-actions {
   align-items: end;
   display: grid;
-  gap: 12px;
+  gap: 8px;
   justify-items: end;
   max-width: 360px;
 }
@@ -746,7 +739,46 @@
 }
 
 .result-flow {
-  gap: 22px;
+  gap: 12px;
+}
+
+.result-flow .round-card-stage {
+  min-height: auto;
+}
+
+@media (max-width: 640px) {
+  .result-box {
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+    width: min(100%, 94vw);
+  }
+
+  .result-box > div:first-child {
+    width: 76px;
+  }
+
+  .result-lottie {
+    height: 96px;
+    margin: -14px -10px;
+    width: 96px;
+  }
+
+  .result-box-actions {
+    gap: 6px;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .result-box p {
+    font-size: 0.82rem;
+    line-height: 1.18;
+  }
+
+  .result-box-actions .primary-button {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .finished-game-flow {

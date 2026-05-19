@@ -115,8 +115,15 @@
 }
 
 .challenge-stage {
+  display: flex;
+  flex-direction: column;
   min-height: min(560px, calc(100vh - 190px));
   position: relative;
+}
+
+.challenge-stage > .timeline-preview {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .challenge-dialog {

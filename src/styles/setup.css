@@ -496,7 +496,7 @@
 
 .player-card,
 .add-player-card {
-  aspect-ratio: 2 / 3;
+  /* aspect-ratio: 2 / 3; */
   border-radius: 16px;
   min-height: 210px;
 }
@@ -611,12 +611,42 @@
   text-align: center;
 }
 
+.player-card-controls {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.player-card-controls input:not([type="color"]) {
+  min-width: 0;
+}
+
 .player-color-input {
-  background: var(--card);
-  border-color: color-mix(in srgb, var(--player-color) 45%, var(--border));
-  justify-self: center;
-  min-height: 38px;
-  width: 72px;
+  background: color-mix(in srgb, var(--card) 74%, transparent);
+  border: 1px solid color-mix(in srgb, var(--player-color) 35%, var(--border));
+  border-radius: 8px;
+  justify-self: end;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+  overflow: hidden;
+  padding: 0;
+  width: 52px;
+}
+
+.player-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.player-color-input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 7px;
+}
+
+.player-color-input::-moz-color-swatch {
+  border: 0;
+  border-radius: 7px;
 }
 
 .add-player-card {

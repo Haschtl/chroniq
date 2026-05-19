@@ -18,7 +18,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { createContext, FormEvent, lazy, PointerEvent, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, FormEvent, lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Cable,
   Check,
@@ -26,6 +26,7 @@ import {
   History,
   Home,
   Link as LinkIcon,
+  Maximize2,
   Menu,
   Pause,
   Play,
@@ -319,7 +320,7 @@ export function HomePage() {
   const [customUrlLoading, setCustomUrlLoading] = useState(false);
   const [autoquartettLoadError, setAutoquartettLoadError] = useState("");
   const [replayHistoryId, setReplayHistoryId] = useState(savedSetup?.replayHistoryId ?? "");
-  const [cardChoiceCount, setCardChoiceCount] = useState(savedSetup?.cardChoiceCount ?? 3);
+  const [cardChoiceCount, setCardChoiceCount] = useState(savedSetup?.cardChoiceCount ?? 1);
   const [gameStartLoading, setGameStartLoading] = useState(false);
   const initialStopCondition = savedSetup?.stopCondition ?? ({ type: "maxPoints", points: 10 } satisfies StopCondition);
   const [stopType, setStopType] = useState<"maxPoints" | "maxRounds" | "leadPoints">(initialStopCondition.type);
@@ -507,7 +508,10 @@ export function HomePage() {
       <form className="panel setup-panel" onSubmit={submit}>
         <div className="section-heading">
           <label className="field game-name-field">
-            <input value={gameName} onChange={(event) => setGameName(event.target.value)} />
+            <input
+              value={gameName}
+              onChange={(event) => setGameName(event.target.value)}
+            />
           </label>
         </div>
 
@@ -518,26 +522,45 @@ export function HomePage() {
           </div>
           <div className="player-editor">
             {normalizedPlayers.map((player, index) => (
-              <article className="player-card" key={index} style={{ "--player-color": player.color } as React.CSSProperties}>
+              <article
+                className="player-card"
+                key={index}
+                style={
+                  { "--player-color": player.color } as React.CSSProperties
+                }
+              >
                 <div className="player-card-top">
                   <span>Team {index + 1}</span>
-                  <button type="button" disabled={normalizedPlayers.length <= 2} onClick={() => removePlayer(index)}>
+                  <button
+                    type="button"
+                    disabled={normalizedPlayers.length <= 2}
+                    onClick={() => removePlayer(index)}
+                  >
                     ×
                   </button>
                 </div>
                 <TeamAvatar color={player.color} name={player.name} />
-                <input
-                  aria-label={`Name Team ${index + 1}`}
-                  value={player.name}
-                  onChange={(event) => updatePlayer(index, { name: event.target.value })}
-                />
-                <input
-                  aria-label={`Farbe Team ${index + 1}`}
-                  className="player-color-input"
-                  type="color"
-                  value={player.color}
-                  onChange={(event) => updatePlayer(index, { color: event.target.value })}
-                />
+                <div className="player-card-controls">
+                  <input
+                    aria-label={`Name Team ${index + 1}`}
+                    maxLength={12}
+                    value={player.name}
+                    onChange={(event) =>
+                      updatePlayer(index, {
+                        name: event.target.value.slice(0, 12),
+                      })
+                    }
+                  />
+                  <input
+                    aria-label={`Farbe Team ${index + 1}`}
+                    className="player-color-input"
+                    type="color"
+                    value={player.color}
+                    onChange={(event) =>
+                      updatePlayer(index, { color: event.target.value })
+                    }
+                  />
+                </div>
               </article>
             ))}
             <button
@@ -559,33 +582,56 @@ export function HomePage() {
           <ModeSelect value={mode} onValueChange={setMode} />
 
           {mode === "spotify-generator" ? (
-            <SpotifyGeneratorSetup setup={spotifySetup} spotifyConnector={spotifyConnector} />
+            <SpotifyGeneratorSetup
+              setup={spotifySetup}
+              spotifyConnector={spotifyConnector}
+            />
           ) : null}
           {mode === "custom" ? (
             <div className="custom-tools">
               <div className="custom-source-grid">
                 <label className="field">
                   Datei hochladen
-                  <input accept=".csv,.tsv,.txt" type="file" onChange={(event) => loadCustomFile(event.target.files?.[0])} />
+                  <input
+                    accept=".csv,.tsv,.txt"
+                    type="file"
+                    onChange={(event) =>
+                      loadCustomFile(event.target.files?.[0])
+                    }
+                  />
                 </label>
                 <label className="field">
                   URL
                   <input
                     placeholder="https://..."
                     value={customSetup.sourceUrl}
-                    onChange={(event) => updateCustomSetup({ sourceUrl: event.target.value })}
+                    onChange={(event) =>
+                      updateCustomSetup({ sourceUrl: event.target.value })
+                    }
                   />
                 </label>
-                <button className="secondary-button custom-load-button" type="button" onClick={loadCustomUrl} disabled={customUrlLoading}>
+                <button
+                  className="secondary-button custom-load-button"
+                  type="button"
+                  onClick={loadCustomUrl}
+                  disabled={customUrlLoading}
+                >
                   <LinkIcon size={15} />
                   {customUrlLoading ? "Lädt..." : "URL laden"}
                 </button>
               </div>
-              {customLoadError ? <p className="form-error">{customLoadError}</p> : null}
+              {customLoadError ? (
+                <p className="form-error">{customLoadError}</p>
+              ) : null}
               <div className="custom-options-grid">
                 <label className="field">
                   Trennzeichen
-                  <select value={customSetup.delimiter} onChange={(event) => updateCustomSetup({ delimiter: event.target.value })}>
+                  <select
+                    value={customSetup.delimiter}
+                    onChange={(event) =>
+                      updateCustomSetup({ delimiter: event.target.value })
+                    }
+                  >
                     <option value="auto">Auto</option>
                     <option value=",">Komma</option>
                     <option value=";">Semikolon</option>
@@ -596,27 +642,64 @@ export function HomePage() {
                   <input
                     checked={customSetup.hasHeader}
                     type="checkbox"
-                    onChange={(event) => updateCustomSetup({ hasHeader: event.target.checked })}
+                    onChange={(event) =>
+                      updateCustomSetup({ hasHeader: event.target.checked })
+                    }
                   />
                   Erste Zeile ist Header
                 </label>
               </div>
               {customSetup.columns.length > 0 ? (
                 <div className="custom-mapping-grid">
-                  <CustomColumnSelect customSetup={customSetup} field="title" label="Titel / Name" onChange={updateCustomSetup} />
-                  <CustomColumnSelect customSetup={customSetup} field="artist" label="Artist / Zusatzguess" onChange={updateCustomSetup} />
-                  <CustomColumnSelect customSetup={customSetup} field="order" label="Sortierwert" onChange={updateCustomSetup} required />
-                  <CustomColumnSelect customSetup={customSetup} field="image" label="Bild-URL" onChange={updateCustomSetup} />
-                  <CustomColumnSelect customSetup={customSetup} field="audio" label="Audio-URL" onChange={updateCustomSetup} />
+                  <CustomColumnSelect
+                    customSetup={customSetup}
+                    field="title"
+                    label="Titel / Name"
+                    onChange={updateCustomSetup}
+                  />
+                  <CustomColumnSelect
+                    customSetup={customSetup}
+                    field="artist"
+                    label="Artist / Zusatzguess"
+                    onChange={updateCustomSetup}
+                  />
+                  <CustomColumnSelect
+                    customSetup={customSetup}
+                    field="order"
+                    label="Sortierwert"
+                    onChange={updateCustomSetup}
+                    required
+                  />
+                  <CustomColumnSelect
+                    customSetup={customSetup}
+                    field="image"
+                    label="Bild-URL"
+                    onChange={updateCustomSetup}
+                  />
+                  <CustomColumnSelect
+                    customSetup={customSetup}
+                    field="audio"
+                    label="Audio-URL"
+                    onChange={updateCustomSetup}
+                  />
                   <label className="field">
                     Label Sortierwert
-                    <input value={customSetup.orderLabel} onChange={(event) => updateCustomSetup({ orderLabel: event.target.value })} />
+                    <input
+                      value={customSetup.orderLabel}
+                      onChange={(event) =>
+                        updateCustomSetup({ orderLabel: event.target.value })
+                      }
+                    />
                   </label>
                   <label className="check-field">
                     <input
                       checked={customSetup.extraArtistGuess}
                       type="checkbox"
-                      onChange={(event) => updateCustomSetup({ extraArtistGuess: event.target.checked })}
+                      onChange={(event) =>
+                        updateCustomSetup({
+                          extraArtistGuess: event.target.checked,
+                        })
+                      }
                     />
                     Artist als Extra-Guess
                   </label>
@@ -624,7 +707,18 @@ export function HomePage() {
               ) : null}
               {customSetup.rawText ? (
                 <p className="muted">
-                  {customSetup.entries.length} Karten aus {Math.max(0, parseCsv(customSetup.rawText, resolveDelimiter(customSetup.rawText, customSetup.delimiter)).length - (customSetup.hasHeader ? 1 : 0))} Zeilen erzeugt.
+                  {customSetup.entries.length} Karten aus{" "}
+                  {Math.max(
+                    0,
+                    parseCsv(
+                      customSetup.rawText,
+                      resolveDelimiter(
+                        customSetup.rawText,
+                        customSetup.delimiter,
+                      ),
+                    ).length - (customSetup.hasHeader ? 1 : 0),
+                  )}{" "}
+                  Zeilen erzeugt.
                 </p>
               ) : null}
             </div>
@@ -632,13 +726,18 @@ export function HomePage() {
           {mode === "replay" ? (
             <label className="field">
               Historie
-              <select value={replayHistoryId} onChange={(event) => setReplayHistoryId(event.target.value)}>
+              <select
+                value={replayHistoryId}
+                onChange={(event) => setReplayHistoryId(event.target.value)}
+              >
                 <option value="">Replay auswählen</option>
                 {state.history
                   .filter((entry) => (entry.replayEntries?.length ?? 0) > 0)
                   .map((entry) => (
                     <option key={entry.id} value={entry.id}>
-                      {entry.name} - {new Date(entry.finishedAt).toLocaleString("de-DE")} ({entry.replayEntries?.length ?? 0})
+                      {entry.name} -{" "}
+                      {new Date(entry.finishedAt).toLocaleString("de-DE")} (
+                      {entry.replayEntries?.length ?? 0})
                     </option>
                   ))}
               </select>
@@ -647,23 +746,54 @@ export function HomePage() {
         </section>
 
         <section className="setup-section accordion-section">
-          <Accordion.Root className="setup-accordion-root" collapsible type="single">
+          <Accordion.Root
+            className="setup-accordion-root"
+            collapsible
+            type="single"
+          >
             <Accordion.Item className="setup-accordion" value="victory">
               <Accordion.Header>
                 <Accordion.Trigger className="setup-accordion-trigger">
                   <span>
-                    <b>Sieg</b>
-                    <small>{getStopConditionSummary(stopType, stopValue)}</small>
+                    <b>Einstellungen</b>
+                    <small>
+                      {getStopConditionSummary(stopType, stopValue)}
+                    </small>
                   </span>
                   <span aria-hidden="true">⌄</span>
                 </Accordion.Trigger>
               </Accordion.Header>
               <Accordion.Content className="setup-accordion-content">
                 <div className="stop-config">
-                  <div className="mode-grid" role="radiogroup" aria-label="Spielende">
+                <label className="field compact-field">
+                  Karten zur Auswahl
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={cardChoiceCount}
+                    onChange={(event) =>
+                      setCardChoiceCount(
+                        normalizeCardChoiceCount(Number(event.target.value)),
+                      )
+                    }
+                  />
+                  {/* <small>{normalizeCardChoiceCount(cardChoiceCount) === 1 ? "Auswahl wird übersprungen." : "Pro Runde im ersten Schritt sichtbar."}</small> */}
+                </label>
+                </div>
+                <div className="stop-config">
+                  <div
+                    className="mode-grid"
+                    role="radiogroup"
+                    aria-label="Spielende"
+                  >
                     {stopConditionOptions.map((option) => (
                       <button
-                        className={stopType === option.type ? "mode-card compact active" : "mode-card compact"}
+                        className={
+                          stopType === option.type
+                            ? "mode-card compact active"
+                            : "mode-card compact"
+                        }
                         key={option.type}
                         type="button"
                         onClick={() => {
@@ -677,13 +807,19 @@ export function HomePage() {
                     ))}
                   </div>
                   <label className="field">
-                    {stopConditionOptions.find((option) => option.type === stopType)?.valueLabel}
+                    {
+                      stopConditionOptions.find(
+                        (option) => option.type === stopType,
+                      )?.valueLabel
+                    }
                     <input
                       type="number"
                       min={1}
                       max={stopType === "maxRounds" ? 100 : 30}
                       value={stopValue}
-                      onChange={(event) => setStopValue(Number(event.target.value))}
+                      onChange={(event) =>
+                        setStopValue(Number(event.target.value))
+                      }
                     />
                   </label>
                 </div>
@@ -693,21 +829,13 @@ export function HomePage() {
         </section>
 
         <section className="setup-section start-section">
-          <label className="field compact-field">
-            Karten zur Auswahl
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={cardChoiceCount}
-              onChange={(event) => setCardChoiceCount(normalizeCardChoiceCount(Number(event.target.value)))}
-            />
-            <small>{normalizeCardChoiceCount(cardChoiceCount) === 1 ? "Auswahl wird übersprungen." : "Pro Runde im ersten Schritt sichtbar."}</small>
-          </label>
-
           <Accordion.Root collapsible type="single">
             <Accordion.Item
-              className={requiredConnectorMissing ? "connector-accordion missing" : "connector-accordion"}
+              className={
+                requiredConnectorMissing
+                  ? "connector-accordion missing"
+                  : "connector-accordion"
+              }
               value="connectors"
             >
               <Accordion.Header>
@@ -720,7 +848,9 @@ export function HomePage() {
                 <div className="connector-accordion-body">
                   <div className="connector-summary-row">
                     <span>Spotify</span>
-                    <b className={spotifyConnector ? "ok" : "missing"}>{spotifyConnector ? "verbunden" : "fehlt"}</b>
+                    <b className={spotifyConnector ? "ok" : "missing"}>
+                      {spotifyConnector ? "verbunden" : "fehlt"}
+                    </b>
                   </div>
                   <Link className="secondary-button" to="/settings">
                     <Settings size={15} />
@@ -731,10 +861,20 @@ export function HomePage() {
             </Accordion.Item>
           </Accordion.Root>
 
-          {requiredSeedMissing ? <p className="form-error">Spotify Seed aus der Suche auswählen.</p> : null}
-          {autoquartettLoadError ? <p className="form-error">{autoquartettLoadError}</p> : null}
-          {requiredReplayMissing ? <p className="form-error">Replay aus der Historie auswählen.</p> : null}
-          {requiredCustomMissing ? <p className="form-error">Custom-Datei laden und Mapping auswählen.</p> : null}
+          {requiredSeedMissing ? (
+            <p className="form-error">Spotify Seed aus der Suche auswählen.</p>
+          ) : null}
+          {autoquartettLoadError ? (
+            <p className="form-error">{autoquartettLoadError}</p>
+          ) : null}
+          {requiredReplayMissing ? (
+            <p className="form-error">Replay aus der Historie auswählen.</p>
+          ) : null}
+          {requiredCustomMissing ? (
+            <p className="form-error">
+              Custom-Datei laden und Mapping auswählen.
+            </p>
+          ) : null}
           <button
             className="primary-button start-button"
             type="submit"
@@ -747,7 +887,9 @@ export function HomePage() {
             }
           >
             <Play size={16} fill="currentColor" />
-            {gameStartLoading ? "Karten laden..." : `Spiel starten (${availableCardsLabel})`}
+            {gameStartLoading
+              ? "Karten laden..."
+              : `Spiel starten (${availableCardsLabel})`}
           </button>
         </section>
       </form>
@@ -1432,8 +1574,7 @@ function SortAndGuess({
             ) : (
               <div className="extra-guess-stage-panel">
                 <div className="dialog-header">
-                  <h2>Extra-Punkte</h2>
-                  <p>Karte wurde einsortiert. Trage die Zusatz-Tipps ein und logge den Guess ein.</p>
+                  <h2>Daten raten</h2>
                 </div>
                 {game.settings.extraGuessSelectors.length > 0 ? (
                   <div className="extra-guess-grid">
@@ -1745,108 +1886,73 @@ function PlayCard({
   const backHasAudio = backKeys.has("audioPreview");
   const frontHasAudio = frontKeys.has("audioPreview");
   const canToggleAudio = Boolean(onTogglePause);
-  const orbColor = useCoverAccentColor(songImage?.url, `${entry.title ?? ""}${entry.artist ?? ""}${entry.id}`);
+  const orbColor = useCoverAccentColor((songImage ?? frontImage ?? backImage)?.url, `${entry.title ?? ""}${entry.artist ?? ""}${entry.id}`);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const imagePointerStartRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const activeImage = revealed ? frontImage : backImage;
 
-  if (isSongCard) {
-    const targetRotation = revealed ? 180 : 0;
-
-    return (
-      <motion.div
-        className="play-card song-card"
-        style={{ "--song-orb-color": orbColor } as React.CSSProperties}
-        initial={false}
-        whileHover={animateReveal ? undefined : { rotateX: 5, rotateY: -7, y: -3 }}
-        transition={{ type: "spring", stiffness: 150, damping: 24 }}
-      >
-        <motion.div
-          className="song-card-inner"
-          initial={{ rotateY: animateReveal ? 0 : targetRotation, scale: 1 }}
-          animate={{
-            rotateY: targetRotation,
-            scale: animateReveal ? [1, 1.045, 1] : 1,
-          }}
-          transition={
-            animateReveal
-              ? { duration: 1.05, ease: [0.16, 1, 0.3, 1], times: [0, 0.48, 1] }
-              : { type: "spring", stiffness: 110, damping: 22 }
-          }
-        >
-          <div className="song-card-face song-card-back">
-            {backImage ? <img src={backImage.url} alt={backImage.alt ?? ""} /> : null}
-            {backHasAudio ? <AudioOrb paused={paused} overlay={Boolean(backImage || backTextValues.length)} enabled={canToggleAudio} onTogglePause={onTogglePause} /> : null}
-            {backTextValues.length ? (
-              <CardInfoOverlay values={backTextValues} />
-            ) : null}
-            {hasVisibleGuess ? (
-              <div className={!revealed ? "song-card-back-guess visible" : "song-card-back-guess"}>
-                <small>Guess</small>
-                {guessedTitle ? <strong>{guessedTitle}</strong> : null}
-                {guessedArtist ? <span>{guessedArtist}</span> : null}
-              </div>
-            ) : null}
-            {children}
-          </div>
-          <div className="song-card-face song-card-front">
-            {songImage ? <img src={songImage.url} alt={songImage.alt ?? ""} /> : <div className="song-card-cover-placeholder" />}
-            {frontHasAudio ? <AudioOrb paused={paused} overlay enabled={canToggleAudio} onTogglePause={onTogglePause} /> : null}
-            <CardInfoOverlay values={frontTextValues} />
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  const cardImage = revealed ? frontImage : backImage;
-  const textValues = revealed ? frontTextValues : backTextValues;
-  const openImagePreviewFromPointer = (event: PointerEvent) => {
-    if (!cardImage || !imagePointerStartRef.current) return;
-    const deltaX = event.clientX - imagePointerStartRef.current.x;
-    const deltaY = event.clientY - imagePointerStartRef.current.y;
-    imagePointerStartRef.current = undefined;
-    if (Math.hypot(deltaX, deltaY) > 6) return;
-    event.stopPropagation();
-    setImageDialogOpen(true);
-  };
+  const targetRotation = revealed ? 180 : 0;
+  const canZoomImage = Boolean(!isSongCard && activeImage);
 
   return (
     <motion.div
-      className={cardImage ? "play-card image-zoom-card" : "play-card"}
-      onClick={
-        cardImage
-          ? (event) => {
-              event.stopPropagation();
-              setImageDialogOpen(true);
-            }
-          : undefined
-      }
-      onPointerCancel={() => {
-        imagePointerStartRef.current = undefined;
-      }}
-      onPointerDownCapture={
-        cardImage
-          ? (event) => {
-              imagePointerStartRef.current = { x: event.clientX, y: event.clientY };
-            }
-          : undefined
-      }
-      onPointerUpCapture={cardImage ? openImagePreviewFromPointer : undefined}
-      whileHover={{ rotateX: 4, rotateY: -5, y: -2 }}
-      transition={{ type: "spring", stiffness: 150, damping: 25 }}
+      className={["play-card", isSongCard ? "song-card" : "", canZoomImage ? "has-image-preview" : ""].filter(Boolean).join(" ")}
+      style={{ "--song-orb-color": orbColor } as React.CSSProperties}
+      initial={false}
+      whileHover={animateReveal ? undefined : { rotateX: 5, rotateY: -7, y: -3 }}
+      transition={{ type: "spring", stiffness: 150, damping: 24 }}
     >
-      {cardImage ? <img src={cardImage.url} alt={cardImage.alt ?? ""} /> : null}
-      <div className="play-card-shade" />
-      {textValues.length ? <CardInfoOverlay values={textValues} /> : null}
-      {hasVisibleGuess ? (
-        <div className={!revealed ? "song-card-back-guess visible" : "song-card-back-guess"}>
-          <small>Guess</small>
-          {guessedTitle ? <strong>{guessedTitle}</strong> : null}
-          {guessedArtist ? <span>{guessedArtist}</span> : null}
+      <motion.div
+        className="song-card-inner"
+        initial={{ rotateY: animateReveal ? 0 : targetRotation, scale: 1 }}
+        animate={{
+          rotateY: targetRotation,
+          scale: animateReveal ? [1, 1.045, 1] : 1,
+        }}
+        transition={
+          animateReveal
+            ? { duration: 1.05, ease: [0.16, 1, 0.3, 1], times: [0, 0.48, 1] }
+            : { type: "spring", stiffness: 110, damping: 22 }
+        }
+      >
+        <div className="song-card-face song-card-back">
+          {backImage ? <SafeImage image={backImage} /> : null}
+          {backHasAudio ? <AudioOrb paused={paused} overlay={Boolean(backImage || backTextValues.length)} enabled={canToggleAudio} onTogglePause={onTogglePause} /> : null}
+          {backTextValues.length ? <CardInfoOverlay values={backTextValues} /> : null}
+          {hasVisibleGuess ? (
+            <div className={!revealed ? "song-card-back-guess visible" : "song-card-back-guess"}>
+              <small>Guess</small>
+              {guessedTitle ? <strong>{guessedTitle}</strong> : null}
+              {guessedArtist ? <span>{guessedArtist}</span> : null}
+            </div>
+          ) : null}
+          {children}
         </div>
+        <div className="song-card-face song-card-front">
+          {frontImage ? <SafeImage fallback={<div className="song-card-cover-placeholder" />} image={frontImage} /> : <div className="song-card-cover-placeholder" />}
+          {frontHasAudio ? <AudioOrb paused={paused} overlay enabled={canToggleAudio} onTogglePause={onTogglePause} /> : null}
+          <CardInfoOverlay values={frontTextValues} />
+        </div>
+      </motion.div>
+      {canZoomImage && activeImage ? (
+        <button
+          className="image-preview-trigger"
+          type="button"
+          aria-label="Bild groß anzeigen"
+          onClick={(event) => {
+            event.stopPropagation();
+            setImageDialogOpen(true);
+          }}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          onPointerUp={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          <Maximize2 size={16} />
+        </button>
       ) : null}
-      {children}
-      {cardImage ? <ImagePreviewDialog image={cardImage} onOpenChange={setImageDialogOpen} open={imageDialogOpen} /> : null}
+      {canZoomImage && activeImage ? <ImagePreviewDialog image={activeImage} onOpenChange={setImageDialogOpen} open={imageDialogOpen} /> : null}
     </motion.div>
   );
 }
@@ -1860,16 +1966,48 @@ function ImagePreviewDialog({
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }) {
+  const stopDialogPointer = (event: React.PointerEvent | React.MouseEvent) => {
+    event.stopPropagation();
+    if ("nativeEvent" in event && "stopImmediatePropagation" in event.nativeEvent) {
+      event.nativeEvent.stopImmediatePropagation();
+    }
+  };
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="image-preview-overlay" onClick={() => onOpenChange(false)} />
-        <Dialog.Content className="image-preview-dialog" onClick={() => onOpenChange(false)}>
+        <Dialog.Overlay
+          className="image-preview-overlay"
+          onClick={(event) => {
+            stopDialogPointer(event);
+            onOpenChange(false);
+          }}
+          onPointerDown={stopDialogPointer}
+          onPointerUp={stopDialogPointer}
+        />
+        <Dialog.Content
+          className="image-preview-dialog"
+          onClick={(event) => {
+            stopDialogPointer(event);
+            if (event.target === event.currentTarget) onOpenChange(false);
+          }}
+          onPointerDown={stopDialogPointer}
+          onPointerUp={stopDialogPointer}
+        >
           <Dialog.Title className="sr-only">Bildvorschau</Dialog.Title>
-          <Dialog.Close className="image-preview-close" aria-label="Bildvorschau schließen">
+          <Dialog.Close
+            className="image-preview-close"
+            aria-label="Bildvorschau schließen"
+            onClick={(event) => {
+              stopDialogPointer(event);
+              onOpenChange(false);
+            }}
+            onPointerDown={stopDialogPointer}
+            onPointerUp={stopDialogPointer}
+          >
             <X size={20} />
           </Dialog.Close>
-          <img src={image.url} alt={image.alt ?? "Bildvorschau"} onClick={(event) => event.stopPropagation()} />
+          <SafeImage image={image} onClick={stopDialogPointer} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -2281,7 +2419,7 @@ function RoundResultView({
             ) : null}
             <button className="primary-button" type="button" onClick={onNext}>
               <Play size={16} fill="currentColor" />
-              Nächste Runde
+              Weiter
             </button>
           </div>
         </motion.div>
@@ -2782,10 +2920,25 @@ function CoverImage({ entry }: { entry: GuessEntry }) {
   const cover = getEntryImage(entry);
 
   return isImageValue(cover) ? (
-    <img src={cover.url} alt={cover.alt ?? ""} />
+    <SafeImage fallback={<div className="cover-placeholder" />} image={cover} />
   ) : (
     <div className="cover-placeholder" />
   );
+}
+
+function SafeImage({
+  fallback = null,
+  image,
+  onClick,
+}: {
+  fallback?: React.ReactNode;
+  image: Extract<MediaData, { type: "image" }>;
+  onClick?: React.MouseEventHandler<HTMLImageElement>;
+}) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [image.url]);
+  if (failed) return <>{fallback}</>;
+  return <img src={image.url} alt={image.alt ?? ""} onClick={onClick} onError={() => setFailed(true)} />;
 }
 
 const getEntryImage = (entry: GuessEntry) => {
