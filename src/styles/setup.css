@@ -1,0 +1,723 @@
+
+.mode-card.compact {
+  min-height: 78px;
+  padding: 12px;
+}
+
+.stop-config {
+  display: grid;
+  gap: 14px;
+}
+
+.spotify-tools {
+  display: grid;
+  gap: 12px;
+}
+
+.spotify-advanced-root {
+  margin-top: 2px;
+}
+
+.spotify-advanced-accordion {
+  background: color-mix(in srgb, var(--card) 58%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.spotify-advanced-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--foreground);
+  display: grid;
+  gap: 2px 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 40px;
+  padding: 9px 11px;
+  text-align: left;
+  width: 100%;
+}
+
+.spotify-advanced-trigger span {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.spotify-advanced-trigger small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-advanced-trigger b {
+  color: var(--muted);
+  font-size: 1rem;
+  transition: transform 220ms ease;
+}
+
+.spotify-advanced-trigger[data-state="open"] b {
+  transform: rotate(180deg);
+}
+
+.spotify-advanced-content {
+  overflow: hidden;
+}
+
+.spotify-advanced-content[data-state="open"] {
+  animation: accordion-down 260ms ease-out;
+}
+
+.spotify-advanced-content[data-state="closed"] {
+  animation: accordion-up 220ms ease-out;
+}
+
+.spotify-advanced-grid,
+.spotify-display-options {
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  padding: 11px;
+}
+
+.spotify-advanced-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.spotify-display-options {
+  display: grid;
+  gap: 9px;
+}
+
+.spotify-display-options > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.spotify-display-options > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spotify-display-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--input) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 999px;
+  color: var(--foreground);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 750;
+  gap: 8px;
+  min-height: 32px;
+  padding: 5px 11px 5px 6px;
+  position: relative;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+  user-select: none;
+}
+
+.spotify-display-chip input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.spotify-display-chip:hover {
+  background: color-mix(in srgb, var(--input) 88%, var(--foreground) 5%);
+  border-color: color-mix(in srgb, var(--border) 64%, var(--foreground) 24%);
+}
+
+.spotify-display-chip:has(input:focus-visible) {
+  outline: 2px solid color-mix(in srgb, #1db954 70%, var(--foreground));
+  outline-offset: 2px;
+}
+
+.spotify-display-chip.active {
+  background: color-mix(in srgb, #1db954 18%, var(--card));
+  border-color: color-mix(in srgb, #1db954 62%, var(--border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #1db954 18%, transparent);
+  color: color-mix(in srgb, var(--foreground) 92%, #1db954);
+}
+
+.spotify-display-check {
+  align-items: center;
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 999px;
+  color: transparent;
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+  width: 20px;
+}
+
+.spotify-display-chip.active .spotify-display-check {
+  background: #1db954;
+  border-color: #1db954;
+  color: #04130a;
+}
+
+.spotify-seed-input {
+  @apply grid min-h-11 grid-cols-[44px_minmax(0,1fr)] overflow-hidden rounded-lg border border-border;
+  background: var(--input);
+}
+
+.spotify-seed-input input {
+  border: 0;
+  border-radius: 0;
+  min-height: 42px;
+}
+
+.spotify-seed-input.disabled {
+  opacity: 0.68;
+}
+
+.spotify-prefix-button {
+  @apply inline-flex items-center justify-center border-0;
+  background: #1db954;
+  color: white;
+}
+
+.spotify-prefix-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.spotify-prefix-button svg {
+  height: 20px;
+  width: 20px;
+}
+
+.custom-tools {
+  display: grid;
+  gap: 14px;
+}
+
+.custom-source-grid,
+.custom-options-grid,
+.custom-mapping-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.custom-source-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.custom-load-button {
+  align-self: end;
+  min-height: 44px;
+}
+
+.custom-options-grid,
+.custom-mapping-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.spotify-live-results {
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(20, 20, 20, 0.12);
+  color: var(--foreground);
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+
+.spotify-result {
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  color: var(--foreground);
+  padding: 0;
+  text-align: left;
+}
+
+.spotify-result:hover,
+.spotify-result:focus-visible {
+  outline: 0;
+}
+
+.spotify-result:hover .spotify-seed-card,
+.spotify-result:focus-visible .spotify-seed-card {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card-muted));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
+}
+
+.spotify-seed-card {
+  align-items: center;
+  background: color-mix(in srgb, var(--card-muted) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 14px;
+  color: var(--foreground);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  padding: 10px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.spotify-seed-card.compact {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.spotify-seed-card img,
+.spotify-seed-card .cover-placeholder {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.spotify-seed-card div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.spotify-seed-card strong,
+.spotify-seed-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-seed-card span {
+  color: var(--muted);
+}
+
+.spotify-seed-card b {
+  background: var(--primary);
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  font-size: 0.82rem;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.spotify-seed-selection {
+  display: grid;
+  gap: 8px;
+}
+
+.seed-clear-button {
+  justify-self: end;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.spotify-preload-row {
+  align-items: center;
+  background: color-mix(in srgb, var(--card-muted) 64%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 8px 10px;
+}
+
+.spotify-preload-row span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.spotify-preload-row .secondary-button {
+  min-height: 34px;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.mode-card.active {
+  background: #141414;
+  color: #fffdfa;
+}
+
+.mode-card span {
+  color: #6f6a61;
+  font-size: 0.9rem;
+}
+
+.mode-card.active span {
+  color: rgba(255, 253, 250, 0.72);
+}
+
+.mode-select-trigger {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 98%, var(--background) 2%);
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 12px 34px color-mix(in srgb, #141414 8%, transparent);
+  color: var(--foreground);
+  display: flex;
+  justify-content: space-between;
+  min-height: 74px;
+  padding: 13px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.mode-select-trigger[data-state="open"] {
+  background: color-mix(in srgb, var(--card-muted) 58%, var(--card) 42%);
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+}
+
+.mode-select-trigger span,
+.mode-select-item span,
+.setup-accordion-trigger span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mode-select-trigger b,
+.mode-select-item b,
+.setup-accordion-trigger b {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.mode-select-trigger small,
+.mode-select-item small,
+.setup-accordion-trigger small {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.mode-select-icon {
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 900;
+  padding-left: 12px;
+}
+
+.mode-select-content {
+  background: color-mix(in srgb, var(--card) 98%, var(--background) 2%);
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px color-mix(in srgb, #141414 26%, transparent);
+  color: var(--foreground);
+  min-width: var(--radix-select-trigger-width);
+  overflow: hidden;
+  padding: 6px;
+  z-index: 80;
+}
+
+.mode-select-item {
+  align-items: center;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  outline: 0;
+  padding: 11px 12px;
+}
+
+.mode-select-item[data-highlighted] {
+  background: color-mix(in srgb, var(--primary) 14%, var(--card-muted));
+}
+
+.mode-select-item[data-state="checked"] {
+  background: color-mix(in srgb, var(--primary) 18%, var(--card));
+}
+
+.mode-select-check {
+  color: var(--primary);
+  display: inline-flex;
+}
+
+.setup-accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.setup-accordion-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--foreground);
+  display: flex;
+  justify-content: space-between;
+  padding: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.setup-accordion-trigger > span:last-child {
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 900;
+  transition: transform 220ms ease;
+}
+
+.setup-accordion-trigger[data-state="open"] > span:last-child {
+  transform: rotate(180deg);
+}
+
+.setup-accordion-content {
+  overflow: hidden;
+}
+
+.setup-accordion-content[data-state="open"] {
+  animation: accordion-down 260ms ease-out;
+}
+
+.setup-accordion-content[data-state="closed"] {
+  animation: accordion-up 220ms ease-out;
+}
+
+.setup-accordion-content .stop-config {
+  border-top: 1px solid var(--border);
+  padding: 14px;
+}
+
+.player-card,
+.add-player-card {
+  aspect-ratio: 2 / 3;
+  border-radius: 16px;
+  min-height: 210px;
+}
+
+.player-card {
+  background:
+    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--player-color) 38%, transparent), transparent 44%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card) 94%, transparent), color-mix(in srgb, var(--card-muted) 88%, transparent));
+  border: 2px solid var(--player-color);
+  box-shadow: 0 18px 44px rgba(20, 20, 20, 0.1);
+  display: grid;
+  gap: 12px;
+  grid-template-rows: auto 1fr auto;
+  padding: 14px;
+}
+
+.player-card-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.player-card-top span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.player-card-top button {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--foreground);
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  width: 28px;
+}
+
+.team-avatar-wrap {
+  align-self: center;
+  background:
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--player-color) 32%, transparent), transparent 58%),
+    color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--player-color) 42%, var(--border));
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--player-color) 10%, transparent);
+  display: grid;
+  justify-self: center;
+  overflow: hidden;
+  place-items: center;
+  position: relative;
+  width: min(112px, 58%);
+}
+
+.team-avatar-wrap.small {
+  align-self: auto;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--player-color) 10%, transparent);
+  flex: 0 0 auto;
+  height: 48px;
+  justify-self: auto;
+  width: 48px;
+}
+
+.team-avatar-wrap::before {
+  content: "";
+  display: block;
+  grid-area: 1 / 1;
+  padding-top: 100%;
+}
+
+.team-avatar {
+  grid-area: 1 / 1;
+  height: 88%;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  width: 88%;
+}
+
+.team-avatar.normal {
+  opacity: 1;
+}
+
+.team-avatar-wrap:hover .team-avatar.normal,
+.team-avatar-wrap:active .team-avatar.normal,
+.team-avatar-wrap:hover .team-avatar.pressed {
+  opacity: 0;
+}
+
+.team-avatar-wrap:hover .team-avatar.wink {
+  opacity: 1;
+}
+
+.team-avatar-wrap:active .team-avatar.wink {
+  opacity: 0;
+}
+
+.team-avatar-wrap:active .team-avatar.pressed {
+  opacity: 1;
+}
+
+.player-card input:not([type="color"]) {
+  align-self: center;
+  background: color-mix(in srgb, var(--card) 74%, transparent);
+  border-color: color-mix(in srgb, var(--player-color) 35%, var(--border));
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.player-color-input {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--player-color) 45%, var(--border));
+  justify-self: center;
+  min-height: 38px;
+  width: 72px;
+}
+
+.add-player-card {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 52%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card) 88%, transparent), color-mix(in srgb, var(--card-muted) 82%, transparent));
+  border: 2px dashed color-mix(in srgb, var(--primary) 70%, var(--border));
+  box-shadow: 0 18px 44px rgba(20, 20, 20, 0.12);
+  color: var(--primary);
+  display: flex;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 220ms ease, opacity 160ms ease;
+}
+
+.add-player-card:not(:disabled):active {
+  transform: rotateY(180deg);
+}
+
+.add-player-card span {
+  font-size: 3.4rem;
+  font-weight: 900;
+}
+
+.add-player-card:disabled {
+  opacity: 0.4;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 font-extrabold;
+}
+
+.primary-button {
+  @apply border border-primary bg-primary text-primary-foreground;
+}
+
+.hold-button {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.hold-button::before {
+  background: color-mix(in srgb, #1db954 72%, white 18%);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 320ms ease-out;
+  z-index: 0;
+}
+
+.hold-button.holding::before {
+  transform: scaleX(1);
+  transition: transform 1000ms linear;
+}
+
+.hold-button.releasing::before {
+  transform: scaleX(0);
+  transition: transform 320ms ease-out;
+}
+
+.hold-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell[data-theme="dark"] .hold-button {
+  background: #1db954;
+  border-color: #1db954;
+  color: #06130a;
+}
+
+.app-shell[data-theme="dark"] .hold-button::before {
+  background: color-mix(in srgb, white 36%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-shell[data-theme="system"] .hold-button {
+    background: #1db954;
+    border-color: #1db954;
+    color: #06130a;
+  }
+
+  .app-shell[data-theme="system"] .hold-button::before {
+    background: color-mix(in srgb, white 36%, transparent);
+  }
+}
+
+.secondary-button {
+  @apply border border-border bg-card text-foreground;
+}
+
+.ghost-button {
+  @apply w-full border border-border bg-transparent text-foreground;
+}

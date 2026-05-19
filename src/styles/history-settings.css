@@ -1,0 +1,491 @@
+
+.extra-guess-stage-panel .dialog-header {
+  max-width: 520px;
+}
+
+.extra-guess-stage-panel .dialog-actions {
+  justify-content: end;
+}
+
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.48);
+  inset: 0;
+  position: fixed;
+  z-index: 60;
+}
+
+.dialog-content {
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+  color: var(--foreground);
+  display: grid;
+  gap: 18px;
+  left: 50%;
+  max-height: min(82vh, 680px);
+  max-width: min(560px, calc(100vw - 28px));
+  overflow: auto;
+  padding: clamp(18px, 4vw, 26px);
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  z-index: 61;
+}
+
+.dialog-header {
+  display: grid;
+  gap: 8px;
+}
+
+.dialog-header h2 {
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
+  line-height: 0.95;
+  margin: 0;
+}
+
+.dialog-header p {
+  color: var(--muted);
+  font-weight: 750;
+  margin: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.connector-required-dialog {
+  max-width: min(620px, calc(100vw - 28px));
+}
+
+.connector-required-dialog .primary-button svg {
+  height: 18px;
+  width: 18px;
+}
+
+.guess-result-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: end;
+}
+
+.guess-result-summary {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.guess-result-summary > strong {
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
+  font-size: 0.92rem;
+}
+
+.guess-result {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.guess-result.correct {
+  background: color-mix(in srgb, #47a66b 14%, transparent);
+  border-color: color-mix(in srgb, #47a66b 58%, var(--border));
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
+}
+
+.actions,
+.history-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.challenge-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.challenge-stage {
+  min-height: min(560px, calc(100vh - 190px));
+  position: relative;
+}
+
+.challenge-dialog {
+  max-width: min(560px, calc(100vw - 28px));
+}
+
+.challenge-top {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 26px);
+  text-align: center;
+}
+
+.challenge-top > div {
+  flex-basis: 100%;
+}
+
+.challenge-top p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.challenge-top h2 {
+  font-size: clamp(2rem, 7vw, 4.5rem);
+  line-height: 0.9;
+  margin: 0;
+}
+
+.challenge-team-card {
+  aspect-ratio: auto;
+  cursor: pointer;
+  gap: 8px;
+  grid-template-rows: auto auto auto;
+  min-height: 0;
+  padding: 10px;
+  text-align: center;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.challenge-team-card:hover:not(:disabled) {
+  box-shadow: 0 14px 36px rgb(15 23 42 / 0.12);
+  transform: translateY(-1px);
+}
+
+.challenge-team-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.challenge-team-card > strong {
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1.05;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-team-meta {
+  align-items: center;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+}
+
+.challenge-team-card .player-card-top {
+  justify-content: center;
+}
+
+.challenge-team-card .team-avatar-wrap {
+  width: 64px;
+}
+
+.challenge-team-card .coin-row {
+  gap: 3px;
+}
+
+.challenge-team-card .coin {
+  height: 9px;
+  width: 9px;
+}
+
+.challenge-team-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.timeline-row.correction {
+  align-items: center;
+  gap: 0;
+}
+
+.timeline-row.correction .timeline-pair {
+  align-items: center;
+}
+
+.correction-gap {
+  align-items: center;
+  align-self: center;
+  background: color-mix(in srgb, var(--card) 42%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 950;
+  height: var(--entry-play-card-size, var(--entry-play-card-width));
+  justify-content: center;
+  line-height: 1;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  transition:
+    background 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-row:has(.song-card) .correction-gap {
+  height: var(--entry-song-card-size);
+}
+
+.correction-gap:hover,
+.correction-gap:focus-visible {
+  background: color-mix(in srgb, var(--primary) 38%, transparent);
+  border-color: var(--primary);
+  color: var(--foreground);
+  outline: none;
+}
+
+.correction-gap.claimed {
+  background: color-mix(in srgb, var(--player-color) 74%, transparent);
+  border-color: var(--player-color);
+  color: #141414;
+}
+
+.correction-gap.claimed span {
+  display: block;
+  line-height: 1;
+  max-width: none;
+  overflow: hidden;
+  position: absolute;
+  text-align: center;
+  text-overflow: ellipsis;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  width: calc(var(--entry-song-card-size, 210px) - 22px);
+}
+
+.history-panel,
+.history-result-panel,
+.connectors-panel {
+  margin: 0 auto;
+  max-width: 960px;
+}
+
+.history-panel .section-heading,
+.history-result-panel .section-heading {
+  margin-bottom: 18px;
+}
+
+.connectors-panel .section-heading {
+  margin-bottom: 18px;
+}
+
+.history-panel > .ghost-button {
+  margin-top: 18px;
+}
+
+.history-item,
+.connector-card {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-card {
+  background: color-mix(in srgb, var(--card-muted) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 8px;
+  color: var(--foreground);
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.settings-card p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.connector-main-card {
+  margin-bottom: 0;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.connector-card {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 8px;
+  color: var(--foreground);
+  grid-template-columns: 1fr;
+  padding: 16px;
+  position: relative;
+}
+
+.connector-card p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.connector-card > div:first-of-type {
+  padding-right: 96px;
+}
+
+.status-dot {
+  background: color-mix(in srgb, var(--card-muted) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 850;
+  padding: 6px 10px;
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+
+.status-dot.configured {
+  background: color-mix(in srgb, #47a66b 16%, transparent);
+  border-color: color-mix(in srgb, #47a66b 58%, var(--border));
+  color: color-mix(in srgb, #47a66b 82%, var(--foreground));
+}
+
+.connector-form {
+  display: grid;
+  gap: 14px;
+  grid-column: 1 / -1;
+}
+
+.form-error {
+  color: #9b2c2c;
+  font-weight: 750;
+  margin-bottom: 0;
+}
+
+.history-scores span {
+  background: color-mix(in srgb, var(--card) 54%, transparent);
+  border: 1px solid;
+  border-radius: 999px;
+  color: var(--foreground);
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --entry-song-card-size: min(220px, 58vw);
+    --entry-play-card-size: var(--entry-song-card-size);
+    --entry-play-card-width: var(--entry-play-card-size);
+  }
+
+  main {
+    padding: calc(12px + 46px) 12px calc(12px + 86px);
+  }
+
+  .has-progress main {
+    padding-top: 46px;
+  }
+
+  .game-shell main {
+    padding: 0 0 92px;
+  }
+
+  .topbar,
+  .setup-grid,
+  .connector-card,
+  .audio-presentation {
+    grid-template-columns: 1fr;
+  }
+
+  .score-bar-content {
+    min-height: 42px;
+  }
+
+  .card-backs {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    justify-content: flex-start;
+    scroll-padding-inline: max(12px, env(safe-area-inset-left));
+  }
+
+  .card-backs.selecting {
+    justify-content: center;
+  }
+
+  .play-card {
+    height: 210px;
+    width: var(--entry-play-card-width);
+  }
+
+  .song-card,
+  .sort-card:has(.song-card) {
+    width: var(--entry-song-card-size);
+  }
+
+  .song-card-picker {
+    height: var(--entry-song-card-size);
+  }
+
+  .sort-card {
+    width: min(150px, 38vw);
+  }
+
+  .podium-stand {
+    gap: 6px;
+  }
+
+  .podium-team-meta .team-avatar-wrap.small {
+    height: 40px;
+    width: 40px;
+  }
+
+  .podium-team-meta strong {
+    font-size: 0.9rem;
+  }
+
+  .podium-team-meta span {
+    font-size: 0.78rem;
+  }
+
+  .podium-step {
+    border-radius: 10px 10px 5px 5px;
+    padding: 8px;
+  }
+
+  .podium-team.rank-1 .podium-step {
+    min-height: 112px;
+  }
+
+  .podium-team.rank-2 .podium-step {
+    min-height: 88px;
+  }
+
+  .podium-team.rank-3 .podium-step {
+    min-height: 70px;
+  }
+}

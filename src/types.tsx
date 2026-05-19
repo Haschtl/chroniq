@@ -13,13 +13,16 @@ export type MediaData =
       alt?: string;
     };
 
-export type GuessValue = number | string | boolean | MediaData;
+export type GuessValue = number | string | boolean | MediaData | Record<string, string>;
 export type GuessEntry = Record<string, GuessValue> & {
   id: string;
   used?: boolean;
+  guessedValues?: Record<string, string>;
   name?: string;
+  model?: string;
   title?: string;
   artist?: string;
+  manufacturer?: string;
   year?: number;
   horsepower?: number;
   albumCover?: Extract<MediaData, { type: "image" }>;
@@ -60,10 +63,15 @@ export interface GameSettings {
   name: string;
   mode: GameMode;
   stopCondition: StopCondition;
+  cardChoiceCount: number;
   presentSelector: {
     type: "auto" | "audio" | "image" | "spotify";
     key: string;
   };
+  presentSelectors?: {
+    type: "auto" | "audio" | "image" | "spotify";
+    key: string;
+  }[];
   orderSelector: {
     key: string;
     dir: "asc" | "desc";
@@ -200,6 +208,7 @@ export interface FinishedGameSummary {
   startedAt: string;
   finishedAt: string;
   players: Pick<Player, "id" | "name" | "color" | "points">[];
+  playerTimelines?: Pick<Player, "id" | "timeline">[];
   winnerIds: string[];
   rounds: number;
   replayEntries?: GuessEntry[];
@@ -227,10 +236,12 @@ export interface SetupState {
   gameName: string;
   mode: GameMode;
   players: NewGamePlayerInput[];
+  cardChoiceCount: number;
   spotifySeed: string;
   spotifyEntries?: GuessEntry[];
   spotifyGeneratedCount?: number;
   spotifyExhausted?: boolean;
+  spotifyAdvanced?: SpotifyAdvancedSettings;
   custom?: CustomSetupState;
   replayHistoryId?: string;
   spotifyPreview?: {
@@ -244,6 +255,19 @@ export interface SetupState {
     strategy: string;
   };
   stopCondition: StopCondition;
+}
+
+export type SpotifyOrderKey = "year" | "durationMs";
+export type SpotifyCardKey = "title" | "artist" | "year" | "durationMs" | "albumCover" | "audioPreview";
+export type SpotifyCardFrontKey = SpotifyCardKey;
+export type SpotifyCardBackKey = SpotifyCardKey;
+export type SpotifyExtraGuessKey = "title" | "artist" | "year" | "durationMs";
+
+export interface SpotifyAdvancedSettings {
+  cardBackKeys: SpotifyCardBackKey[];
+  orderKey: SpotifyOrderKey;
+  cardFrontKeys: SpotifyCardFrontKey[];
+  extraGuessKeys: SpotifyExtraGuessKey[];
 }
 
 export interface CustomSetupState {
@@ -283,6 +307,8 @@ export interface NewGameInput {
   spotifyEntries?: GuessEntry[];
   spotifyGeneratedCount?: number;
   spotifyExhausted?: boolean;
+  spotifyAdvanced?: SpotifyAdvancedSettings;
   stopCondition: StopCondition;
+  cardChoiceCount: number;
   spotifyConnectorId: string;
 }

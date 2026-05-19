@@ -73,6 +73,7 @@ const toAutoquartettEntry = (binding: AutoquartettBinding): GuessEntry | undefin
     id: `wikidata_${itemUrl.split("/").pop()}`,
     used: false,
     name: model,
+    model,
     title: model,
     artist: manufacturer,
     manufacturer,

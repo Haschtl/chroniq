@@ -1,0 +1,1 @@
+export { SpotifyCallbackPage } from "../routeComponents";

@@ -11,7 +11,9 @@ import type {
   Player,
   RoundCorrectionClaim,
   RoundResult,
+  SpotifyAdvancedSettings,
 } from "./types";
+import { isExtraGuessCorrect } from "./lib/textMatch";
 
 const now = () => new Date().toISOString();
 const id = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;
@@ -41,6 +43,7 @@ const spotifyHitsterSettings: GameSettings = {
   name: "Spotify-Generator",
   mode: "spotify-generator",
   stopCondition: { type: "maxPoints", points: 10 },
+  cardChoiceCount: 3,
   presentSelector: {
     type: "audio",
     key: "audioPreview",
@@ -69,6 +72,7 @@ const imageArtSettings: GameSettings = {
   name: "Bild-Künstler",
   mode: "image-art",
   stopCondition: { type: "maxPoints", points: 10 },
+  cardChoiceCount: 3,
   presentSelector: {
     type: "image",
     key: "image",
@@ -90,6 +94,7 @@ const autoquartettSettings: GameSettings = {
   name: "Autoquartett",
   mode: "autoquartett",
   stopCondition: { type: "maxPoints", points: 10 },
+  cardChoiceCount: 3,
   presentSelector: {
     type: "image",
     key: "image",
@@ -98,10 +103,14 @@ const autoquartettSettings: GameSettings = {
     key: "horsepower",
     dir: "asc",
   },
-  extraGuessSelectors: [],
+  extraGuessSelectors: [
+    { type: "text-loose", key: "manufacturer", label: "Hersteller" },
+    { type: "text-loose", key: "model", label: "Modell" },
+  ],
   displaySelectors: [
     { label: "Bild", key: "image", type: "image" },
-    { label: "Baujahr", key: "year", type: "text" },
+    { label: "Hersteller", key: "manufacturer", type: "text" },
+    { label: "Modell", key: "model", type: "text" },
     { label: "PS", key: "horsepower", type: "text" },
   ],
 };
@@ -110,6 +119,7 @@ const customSettings: GameSettings = {
   name: "Custom",
   mode: "custom",
   stopCondition: { type: "maxPoints", points: 10 },
+  cardChoiceCount: 3,
   presentSelector: {
     type: "image",
     key: "image",
@@ -281,7 +291,10 @@ const imageArtEntries: Omit<GuessEntry, "id" | "used">[] = [
 const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
   {
     name: "Ferrari F40",
+    model: "F40",
     title: "Ferrari F40",
+    artist: "Ferrari",
+    manufacturer: "Ferrari",
     year: 1987,
     horsepower: 478,
     image: {
@@ -292,7 +305,10 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
   },
   {
     name: "Porsche 911 Turbo 930",
+    model: "911 Turbo 930",
     title: "Porsche 911 Turbo 930",
+    artist: "Porsche",
+    manufacturer: "Porsche",
     year: 1975,
     horsepower: 260,
     image: {
@@ -303,7 +319,10 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
   },
   {
     name: "Lamborghini Countach LP5000 QV",
+    model: "Countach LP5000 QV",
     title: "Lamborghini Countach LP5000 QV",
+    artist: "Lamborghini",
+    manufacturer: "Lamborghini",
     year: 1985,
     horsepower: 455,
     image: {
@@ -314,7 +333,10 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
   },
   {
     name: "BMW M3 E30",
+    model: "M3 E30",
     title: "BMW M3 E30",
+    artist: "BMW",
+    manufacturer: "BMW",
     year: 1986,
     horsepower: 200,
     image: {
@@ -325,7 +347,10 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
   },
   {
     name: "Bugatti Veyron 16.4",
+    model: "Veyron 16.4",
     title: "Bugatti Veyron 16.4",
+    artist: "Bugatti",
+    manufacturer: "Bugatti",
     year: 2005,
     horsepower: 1001,
     image: {
@@ -358,7 +383,19 @@ export const createGame = (input: NewGameInput): Game => {
     extraPoints: 2,
   }));
 
-  return {
+  const guessEntries = shuffle(
+    input.mode === "replay"
+      ? createReplayEntries(input.replayEntries ?? [])
+      : input.mode === "custom"
+        ? createReplayEntries(input.customEntries ?? [])
+      : input.mode === "spotify-generator"
+      ? input.spotifyEntries ?? []
+      : input.mode === "autoquartett" && input.autoquartettEntries?.length
+        ? input.autoquartettEntries
+        : createStaticEntries(input.mode),
+  );
+
+  const game: Game = {
     id: id("game"),
     createdAt,
     updatedAt: createdAt,
@@ -366,25 +403,53 @@ export const createGame = (input: NewGameInput): Game => {
     settings: {
       ...(input.mode === "replay" && input.replaySettings ? input.replaySettings : getSettings(input.mode)),
       ...(input.mode === "custom" && input.customSettings ? input.customSettings : {}),
+      ...(input.mode === "spotify-generator" && input.spotifyAdvanced ? createSpotifySettings(input.spotifyAdvanced) : {}),
       name: input.gameName.trim() || getSettings(input.mode).name,
       stopCondition: input.stopCondition,
+      cardChoiceCount: normalizeCardChoiceCount(input.cardChoiceCount),
     },
     generator: createGeneratorSettings(input),
-    guessEntries: shuffle(
-      input.mode === "replay"
-        ? createReplayEntries(input.replayEntries ?? [])
-        : input.mode === "custom"
-          ? createReplayEntries(input.customEntries ?? [])
-        : input.mode === "spotify-generator"
-        ? input.spotifyEntries ?? []
-        : input.mode === "autoquartett" && input.autoquartettEntries?.length
-          ? input.autoquartettEntries
-          : createStaticEntries(input.mode),
-    ),
+    guessEntries,
     currentPlayerIndex: 0,
     roundNumber: 1,
     phase: "pick-card",
   };
+
+  return autoChooseSingleCard(game);
+};
+
+const createSpotifySettings = (advanced: SpotifyAdvancedSettings): GameSettings => ({
+  ...spotifyHitsterSettings,
+  presentSelector: getSpotifyCardSelector(advanced.cardBackKeys[0]),
+  presentSelectors: advanced.cardBackKeys.map(getSpotifyCardSelector),
+  orderSelector: {
+    key: advanced.orderKey,
+    dir: "asc",
+  },
+  extraGuessSelectors: advanced.extraGuessKeys.map((key) => spotifyExtraGuessSelectorMap[key]),
+  displaySelectors: advanced.cardFrontKeys.map((key) => spotifyCardFrontSelectorMap[key]),
+});
+
+const getSpotifyCardSelector = (key: SpotifyAdvancedSettings["cardBackKeys"][number]): GameSettings["presentSelector"] => {
+  if (key === "audioPreview") return { type: "audio", key };
+  if (key === "albumCover") return { type: "image", key };
+  return { type: "auto", key };
+};
+
+const spotifyCardFrontSelectorMap: Record<SpotifyAdvancedSettings["cardFrontKeys"][number], GameSettings["displaySelectors"][number]> = {
+  title: { label: "Titel", key: "title", type: "text" },
+  artist: { label: "Artist", key: "artist", type: "text" },
+  year: { label: "Jahr", key: "year", type: "text" },
+  durationMs: { label: "Dauer", key: "durationMs", type: "text" },
+  albumCover: { label: "Cover", key: "albumCover", type: "image" },
+  audioPreview: { label: "Song", key: "audioPreview", type: "text" },
+};
+
+const spotifyExtraGuessSelectorMap: Record<SpotifyAdvancedSettings["extraGuessKeys"][number], GameSettings["extraGuessSelectors"][number]> = {
+  title: { label: "Titel", key: "title", type: "text-loose" },
+  artist: { label: "Artist", key: "artist", type: "text-loose" },
+  year: { label: "Jahr", key: "year", type: "number" },
+  durationMs: { label: "Dauer", key: "durationMs", type: "text-loose" },
 };
 
 const createGeneratorSettings = (input: NewGameInput): GameGeneratorSettings => {
@@ -496,17 +561,24 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     game.settings.orderSelector.key,
     game.settings.orderSelector.dir,
   );
-  const correctIndex = correctRange.index;
   const activePlayerCorrect =
     game.activeRound.proposedIndex >= correctRange.start &&
     game.activeRound.proposedIndex <= correctRange.end;
-  const winningClaim = correctionClaims.find(
+  const evaluatedCorrectionClaims = correctionClaims.map((claim) => ({
+    ...claim,
+    proposedIndex: normalizeCorrectionClaimIndex(claim.proposedIndex, game.activeRound!.proposedIndex!),
+  }));
+  const winningClaim = evaluatedCorrectionClaims.find(
     (claim) => claim.proposedIndex >= correctRange.start && claim.proposedIndex <= correctRange.end,
   );
   const challenged = correctionClaims.length > 0;
   const challengerWasRight = Boolean(winningClaim) && !activePlayerCorrect;
   const awardedPlayerId = activePlayerCorrect ? activePlayer.id : winningClaim?.playerId;
   const extraGuessesCorrect = areExtraGuessesCorrect(game, entry);
+  const timelineEntry: GuessEntry = {
+    ...entry,
+    guessedValues: { ...game.activeRound.extraGuesses },
+  };
 
   const result: RoundResult = {
     activePlayerCorrect,
@@ -532,6 +604,14 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
         ? { extraPoints: Math.max(0, player.extraPoints - 1) }
         : {};
     const receivesCard = awardedPlayerId === player.id;
+    const playerCorrectIndex = receivesCard
+      ? getCorrectInsertionRange(
+          player.timeline,
+          entry,
+          game.settings.orderSelector.key,
+          game.settings.orderSelector.dir,
+        ).index
+      : -1;
     return {
       ...player,
       ...spentChallengePoint,
@@ -540,12 +620,7 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
           ? (spentChallengePoint.extraPoints ?? player.extraPoints) + 1
           : (spentChallengePoint.extraPoints ?? player.extraPoints),
       points: receivesCard ? player.points + 1 : player.points,
-      timeline:
-        receivesCard && player.id === activePlayer.id
-          ? insertAt(player.timeline, entry, correctIndex)
-          : receivesCard
-            ? insertAt(player.timeline, entry, player.timeline.length)
-            : player.timeline,
+      timeline: receivesCard ? insertAt(player.timeline, timelineEntry, playerCorrectIndex) : player.timeline,
     };
   });
 
@@ -571,14 +646,27 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
 export const nextRound = (game: Game): Game => {
   if (game.phase === "finished") return game;
 
-  return {
+  const nextGame = {
     ...touch(game),
     currentPlayerIndex: (game.currentPlayerIndex + 1) % game.players.length,
     roundNumber: game.roundNumber + 1,
     phase: "pick-card",
     activeRound: undefined,
-  };
+  } satisfies Game;
+
+  return autoChooseSingleCard(nextGame);
 };
+
+export const autoChooseSingleCard = (game: Game): Game => {
+  if (game.phase !== "pick-card" || normalizeCardChoiceCount(game.settings.cardChoiceCount) > 1) return game;
+  const entry = getAvailableEntries(game)[0];
+  return entry ? chooseEntry(startRound(game), entry.id) : game;
+};
+
+const normalizeCardChoiceCount = (value: number | undefined) => Math.max(1, Math.min(20, Math.floor(Number(value) || 3)));
+
+const normalizeCorrectionClaimIndex = (claimIndex: number, activeInsertionIndex: number) =>
+  claimIndex > activeInsertionIndex ? claimIndex - 1 : claimIndex;
 
 export const finishGame = (game: Game): Game => ({
   ...touch(game),
@@ -688,18 +776,20 @@ const areExtraGuessesCorrect = (game: Game, entry: GuessEntry) => {
 
   return selectors.every((selector) => {
     const value = game.activeRound?.extraGuesses[selector.key]?.trim() ?? "";
-    const expected = String(entry[selector.key] ?? "");
+    const expected = getExtraGuessExpectedValue(selector.key, entry);
     return isExtraGuessCorrect(selector.type, value, expected);
   });
 };
 
-const isExtraGuessCorrect = (type: string, value: string, expected: string) => {
-  if (!value) return false;
-  if (type === "number") return Number(value) === Number(expected);
-  const normalizedValue = value.trim().toLocaleLowerCase();
-  const normalizedExpected = expected.trim().toLocaleLowerCase();
-  if (type === "text-exact") return normalizedValue === normalizedExpected;
-  return normalizedExpected.includes(normalizedValue) || normalizedValue.includes(normalizedExpected);
+const getExtraGuessExpectedValue = (key: string, entry: GuessEntry) => {
+  const value = entry[key];
+  if (key === "durationMs" && typeof value === "number") {
+    const totalSeconds = Math.round(value / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds} ${value}`;
+  }
+  return String(value ?? "");
 };
 
 const isFinished = (game: Game) => {
@@ -723,6 +813,7 @@ const toSummary = (game: Game): FinishedGameSummary => {
     startedAt: game.createdAt,
     finishedAt: game.finishedAt ?? now(),
     players: game.players.map(({ id, name, color, points }) => ({ id, name, color, points })),
+    playerTimelines: game.players.map(({ id, timeline }) => ({ id, timeline })),
     winnerIds: game.players.filter((player) => player.points === maxPoints).map((player) => player.id),
     rounds: game.roundNumber,
     replayEntries: getReplayEntries(game),

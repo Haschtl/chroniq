@@ -52,6 +52,7 @@ interface SpotifyTrack {
   name?: string;
   artists?: SpotifyArtistRef[];
   album?: SpotifyAlbum;
+  duration_ms?: number;
   preview_url?: string | null;
   external_urls?: {
     spotify?: string;
@@ -353,6 +354,14 @@ export const playSpotifyTrack = async (accessToken: string, deviceId: string, ur
   );
 };
 
+export const resumeSpotifyPlayback = async (accessToken: string, deviceId: string) => {
+  await spotifyFetch<void>(
+    accessToken,
+    `/me/player/play?${new URLSearchParams({ device_id: deviceId }).toString()}`,
+    { method: "PUT" },
+  );
+};
+
 export const pauseSpotifyPlayback = async (accessToken: string) => {
   await spotifyFetch<void>(accessToken, "/me/player/pause", { method: "PUT" });
 };
@@ -437,7 +446,7 @@ const getPlaylistTracks = async (accessToken: string, playlistId: string, index:
     `/playlists/${playlistId}/tracks?${new URLSearchParams({
       limit: String(pageSize),
       offset: String(index),
-      fields: "total,items(track(id,name,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
+      fields: "total,items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
     }).toString()}`,
   );
 
@@ -457,7 +466,7 @@ const getPlaylistTracks = async (accessToken: string, playlistId: string, index:
         `/playlists/${playlistId}/tracks?${new URLSearchParams({
           limit: String(pageSize),
           offset: String(offset),
-          fields: "items(track(id,name,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
+          fields: "items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
         }).toString()}`,
       ),
     ),
@@ -550,6 +559,7 @@ const trackToGuessEntry = async (track: SpotifyTrack): Promise<GuessEntry | unde
     title: track.name,
     artist: artists,
     year: releaseYear,
+    durationMs: track.duration_ms ?? 0,
     spotifyUri: `spotify:track:${track.id}`,
     spotifyUrl: track.external_urls?.spotify ?? `https://open.spotify.com/track/${track.id}`,
     ...(previewUrl

@@ -1,0 +1,585 @@
+
+.finished-order-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.finished-order-header h2,
+.finished-order-header p {
+  margin: 0;
+}
+
+.finished-order-header h2 {
+  font-size: 1.05rem;
+}
+
+.finished-order-header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.finished-order-row {
+  display: flex;
+  gap: 10px;
+  margin-inline: -6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 6px 12px;
+  scroll-padding-inline: 6px;
+}
+
+.finished-order-row .timeline-card {
+  flex: 0 0 auto;
+}
+
+.finished-order-row .song-card {
+  width: min(180px, 54vw);
+}
+
+.finished-order-row .play-card:not(.song-card) {
+  width: min(138px, 42vw);
+}
+
+.sort-flow {
+  gap: 18px;
+}
+
+.sort-surface {
+  display: grid;
+  gap: 22px;
+}
+
+.sort-card {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 14px;
+  justify-self: center;
+  touch-action: none;
+  width: var(--entry-play-card-size, var(--entry-play-card-width));
+  z-index: 4;
+}
+
+.sort-card:has(.song-card) {
+  aspect-ratio: 1;
+  width: var(--entry-song-card-size);
+}
+
+.sort-card.placed {
+  margin: 0 14px;
+}
+
+.play-card {
+  aspect-ratio: 1;
+  background: #1f1f1c;
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(20, 20, 20, 0.16);
+  color: #fffdfa;
+  height: auto;
+  overflow: hidden;
+  position: relative;
+  transform-style: preserve-3d;
+  width: var(--entry-play-card-size, var(--entry-play-card-width));
+  will-change: transform;
+}
+
+.image-zoom-card {
+  cursor: zoom-in;
+}
+
+.sort-card .play-card {
+  height: 100%;
+  width: 100%;
+}
+
+.song-card {
+  aspect-ratio: 1;
+  background: transparent;
+  box-shadow: none;
+  height: auto !important;
+  overflow: visible;
+  perspective: 1100px;
+  perspective-origin: 50% 50%;
+  width: var(--entry-song-card-size);
+}
+
+.song-card-inner {
+  border-radius: inherit;
+  box-shadow: 0 18px 42px rgba(20, 20, 20, 0.22);
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  width: 100%;
+  will-change: transform;
+}
+
+.song-card-inner::before {
+  border: 1px solid rgba(255, 253, 250, 0.12);
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateZ(3px);
+  z-index: 3;
+}
+
+.song-card-face {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background: #141414;
+  border-radius: inherit;
+  color: #fffdfa;
+  display: grid;
+  inset: 0;
+  overflow: hidden;
+  padding: 16px;
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.song-card-back {
+  align-content: center;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--song-orb-color, #1db954) 28%, transparent), transparent 42%),
+    linear-gradient(145deg, #202020, #090909);
+  justify-items: center;
+  overflow: hidden;
+  text-align: center;
+  transform: rotateY(0deg) translateZ(1px);
+}
+
+.song-card-back > img {
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.song-card-back-guess {
+  background: linear-gradient(180deg, transparent, rgba(8, 8, 8, 0.72));
+  bottom: 0;
+  color: #fffdfa;
+  display: grid;
+  gap: 3px;
+  left: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 54px 14px 14px;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  text-align: left;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  z-index: 3;
+}
+
+.song-card-back-guess small {
+  background: color-mix(in srgb, #1db954 86%, white 8%);
+  border-radius: 999px;
+  color: #06130a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  justify-self: start;
+  line-height: 1;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.timeline-card.has-guesses:hover .song-card-back-guess,
+.timeline-card.has-guesses:focus-visible .song-card-back-guess,
+.song-card-back-guess.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.song-card-front {
+  padding: 0;
+  transform: rotateY(180deg) translateZ(1px);
+}
+
+.song-card-front img,
+.song-card-cover-placeholder {
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.song-card-cover-placeholder {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 253, 250, 0.18), transparent 30%),
+    #1f1f1c;
+}
+
+.song-card-info {
+  align-content: end;
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.02) 0%, rgba(20, 20, 20, 0.58) 46%, rgba(20, 20, 20, 0.9) 100%);
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  left: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 54px 16px 14px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.song-card-info > div,
+.song-card-back-guess > div {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.song-card-info::before {
+  background: color-mix(in srgb, #1db954 86%, white 8%);
+  border-radius: 999px;
+  color: #06130a;
+  content: "Guess";
+  font-size: 0.68rem;
+  font-weight: 900;
+  left: 12px;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  padding: 4px 8px;
+  position: absolute;
+  text-transform: uppercase;
+  top: 12px;
+  transition: opacity 160ms ease;
+}
+
+.song-card-info strong,
+.song-card-back strong,
+.song-card-back-guess strong {
+  display: block;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-card-info span,
+.song-card-back span,
+.song-card-back-guess span {
+  color: rgba(255, 253, 250, 0.68);
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-card-info b {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  justify-self: end;
+  line-height: 0.9;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-card-mark {
+  align-items: center;
+  background: rgba(255, 253, 250, 0.1);
+  border: 1px solid rgba(255, 253, 250, 0.12);
+  border-radius: 12px;
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.song-orb {
+  align-items: center;
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.78), transparent 18%),
+    radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--song-orb-color, #1db954) 88%, #ffffff 12%), transparent 48%),
+    radial-gradient(circle at 42% 42%, color-mix(in srgb, var(--song-orb-color, #1db954) 64%, #000000 36%), transparent 72%);
+  border: 1px solid rgba(255, 253, 250, 0.22);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 -16px 28px rgba(0, 0, 0, 0.34),
+    inset 0 12px 26px rgba(255, 255, 255, 0.14),
+    0 0 38px color-mix(in srgb, var(--song-orb-color, #1db954) 58%, transparent),
+    0 18px 42px rgba(0, 0, 0, 0.36);
+  color: #fffdfa;
+  display: inline-grid;
+  justify-content: center;
+  overflow: hidden;
+  place-items: center;
+  position: relative;
+  width: min(116px, 42%);
+}
+
+.song-orb::before,
+.song-orb::after {
+  border-radius: inherit;
+  content: "";
+  inset: -18%;
+  position: absolute;
+}
+
+.song-orb::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    color-mix(in srgb, var(--song-orb-color, #1db954) 76%, #ffffff 24%),
+    transparent,
+    color-mix(in srgb, var(--song-orb-color, #1db954) 64%, #000000 36%),
+    transparent
+  );
+  opacity: 0.48;
+}
+
+.song-orb::after {
+  background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.48), transparent 18%);
+}
+
+.song-orb svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.32));
+  grid-area: 1 / 1;
+  margin: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.song-orb-overlay {
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(104px, 42%);
+  z-index: 2;
+}
+
+.song-orb:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.song-orb.playing {
+  animation: song-orb-hover 2.8s linear infinite;
+}
+
+.song-orb-overlay.playing {
+  animation: song-orb-overlay-hover 2.8s linear infinite;
+}
+
+.song-orb.playing::before {
+  animation: song-orb-spin 3.2s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes song-orb-hover {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes song-orb-overlay-hover {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
+@keyframes song-orb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.play-card img {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.song-card .song-card-front img,
+.song-card .song-card-cover-placeholder {
+  inset: 0;
+  position: absolute;
+}
+
+.play-card-shade {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.08) 0%, rgba(20, 20, 20, 0.7) 68%, rgba(20, 20, 20, 0.92) 100%);
+  bottom: 0;
+  height: 100%;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.play-card > .song-card-info {
+  z-index: 2;
+}
+
+.image-preview-overlay {
+  background: rgba(8, 8, 8, 0.78);
+  inset: 0;
+  position: fixed;
+  z-index: 90;
+}
+
+.image-preview-dialog {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  outline: none;
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  position: fixed;
+  z-index: 91;
+}
+
+.image-preview-close {
+  align-items: center;
+  background: color-mix(in srgb, #141414 72%, transparent);
+  border: 1px solid rgba(255, 253, 250, 0.2);
+  border-radius: 999px;
+  color: #fffdfa;
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  top: max(16px, env(safe-area-inset-top));
+  width: 42px;
+  z-index: 92;
+}
+
+.image-preview-close:hover,
+.image-preview-close:focus-visible {
+  background: color-mix(in srgb, #fffdfa 22%, #141414);
+  outline: none;
+}
+
+.image-preview-dialog img {
+  border-radius: 12px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.44);
+  max-height: min(86vh, 980px);
+  max-width: min(92vw, 1100px);
+  object-fit: contain;
+}
+
+.sr-only {
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.play-card-content {
+  align-content: end;
+  display: grid;
+  gap: 10px;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+}
+
+.play-card-content > div {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.play-card-content strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.08;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-card-content span {
+  color: rgba(255, 253, 250, 0.72);
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-card-content b {
+  font-size: 1.7rem;
+  justify-self: end;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sort-card.dragging {
+  box-shadow: 0 24px 50px rgba(20, 20, 20, 0.2);
+  opacity: 0.88;
+}
+
+.pause-toggle {
+  background: rgba(255, 253, 250, 0.92);
+  border: 1px solid rgba(20, 20, 20, 0.18);
+  border-radius: 999px;
+  color: #141414;
+  font-weight: 900;
+  min-height: 40px;
+  padding: 8px 14px;
+  touch-action: manipulation;
+}
+
+.extra-guess-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.extra-guess-stage-panel {
+  align-content: center;
+  background: color-mix(in srgb, var(--card) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  max-width: min(620px, 100%);
+  padding: clamp(14px, 3vw, 22px);
+  width: 100%;
+}

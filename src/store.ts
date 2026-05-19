@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { initialAppState } from "./game";
+import { normalizeAppState } from "./lib/migrations";
 import type { AppState } from "./types";
 
 const STORAGE_KEY = "chroniq:app-state:v1";
@@ -33,18 +34,7 @@ function readState(): AppState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return initialAppState();
-    const parsed = JSON.parse(raw) as AppState;
-    if (parsed.schemaVersion !== 1) return initialAppState();
-    return {
-      ...initialAppState(),
-      ...parsed,
-      preferences: {
-        ...initialAppState().preferences,
-        ...(parsed.preferences ?? {}),
-      },
-      connectors: parsed.connectors ?? [],
-      history: parsed.history ?? [],
-    };
+    return normalizeAppState(JSON.parse(raw));
   } catch {
     return initialAppState();
   }
