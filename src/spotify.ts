@@ -109,7 +109,7 @@ export interface SpotifySeedPreview {
   strategy: string;
 }
 
-export const getSpotifyRedirectUri = () => `${window.location.origin}/connectors/spotify/callback`;
+export const getSpotifyRedirectUri = () => `${window.location.origin}${import.meta.env.VITE_BASE_PATH}connectors/spotify/callback`;
 
 export const hasSpotifyClientId = () => Boolean(SPOTIFY_CLIENT_ID);
 
