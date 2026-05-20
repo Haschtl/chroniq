@@ -25,6 +25,7 @@ export type GuessEntry = Record<string, GuessValue> & {
   manufacturer?: string;
   year?: number;
   horsepower?: number;
+  powerKw?: number;
   albumCover?: Extract<MediaData, { type: "image" }>;
   image?: Extract<MediaData, { type: "image" }>;
   audioPreview?: Extract<MediaData, { type: "audio" }>;
@@ -85,6 +86,9 @@ export interface GameSettings {
     type: "image" | "text";
     key: string;
     label: string;
+    prefix?: string;
+    suffix?: string;
+    description?: string;
   }[];
 }
 
@@ -242,6 +246,7 @@ export interface SetupState {
   spotifyGeneratedCount?: number;
   spotifyExhausted?: boolean;
   spotifyAdvanced?: SpotifyAdvancedSettings;
+  builtInAdvanced?: Partial<Record<"image-art" | "autoquartett", StaticAdvancedSettings>>;
   custom?: CustomSetupState;
   replayHistoryId?: string;
   spotifyPreview?: {
@@ -268,6 +273,14 @@ export interface SpotifyAdvancedSettings {
   orderKey: SpotifyOrderKey;
   cardFrontKeys: SpotifyCardFrontKey[];
   extraGuessKeys: SpotifyExtraGuessKey[];
+}
+
+export interface StaticAdvancedSettings {
+  orderKey: string;
+  orderLabel: string;
+  cardBackKeys: string[];
+  cardFrontKeys: string[];
+  extraGuessKeys: string[];
 }
 
 export interface CustomSetupState {
@@ -308,7 +321,9 @@ export interface NewGameInput {
   customEntries?: GuessEntry[];
   customSettings?: GameSettings;
   imageArtEntries?: GuessEntry[];
+  imageArtSettings?: GameSettings;
   autoquartettEntries?: GuessEntry[];
+  autoquartettSettings?: GameSettings;
   spotifyEntries?: GuessEntry[];
   spotifyGeneratedCount?: number;
   spotifyExhausted?: boolean;

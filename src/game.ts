@@ -100,7 +100,7 @@ const autoquartettSettings: GameSettings = {
     key: "image",
   },
   orderSelector: {
-    key: "horsepower",
+    key: "powerKw",
     dir: "asc",
   },
   extraGuessSelectors: [
@@ -111,7 +111,7 @@ const autoquartettSettings: GameSettings = {
     { label: "Image", key: "image", type: "image" },
     { label: "Manufacturer", key: "manufacturer", type: "text" },
     { label: "Modell", key: "model", type: "text" },
-    { label: "PS", key: "horsepower", type: "text" },
+    { label: "Power", key: "powerKw", type: "text", suffix: " kW", description: "Power" },
   ],
 };
 
@@ -297,6 +297,7 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
     manufacturer: "Ferrari",
     year: 1987,
     horsepower: 478,
+    powerKw: 351,
     image: {
       type: "image",
       url: "https://upload.wikimedia.org/wikipedia/commons/c/cb/F40_Ferrari_20090509.jpg",
@@ -311,6 +312,7 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
     manufacturer: "Porsche",
     year: 1975,
     horsepower: 260,
+    powerKw: 191,
     image: {
       type: "image",
       url: "https://upload.wikimedia.org/wikipedia/commons/8/8f/Porsche_911_Turbo_3.3_%28930%29_-_Flickr_-_Alexandre_Pr%C3%A9vot_%281%29.jpg",
@@ -325,6 +327,7 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
     manufacturer: "Lamborghini",
     year: 1985,
     horsepower: 455,
+    powerKw: 335,
     image: {
       type: "image",
       url: "https://upload.wikimedia.org/wikipedia/commons/0/06/Lamborghini_Countach_%28white%29.jpg",
@@ -339,6 +342,7 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
     manufacturer: "BMW",
     year: 1986,
     horsepower: 200,
+    powerKw: 147,
     image: {
       type: "image",
       url: "https://upload.wikimedia.org/wikipedia/commons/f/f6/BMW_M3_E30_%28front_quarter%29.jpg",
@@ -353,6 +357,7 @@ const autoquartettEntries: Omit<GuessEntry, "id" | "used">[] = [
     manufacturer: "Bugatti",
     year: 2005,
     horsepower: 1001,
+    powerKw: 736,
     image: {
       type: "image",
       url: "https://upload.wikimedia.org/wikipedia/commons/6/62/Bugatti_Veyron_16.4_%E2%80%93_Frontansicht_%283%29%2C_5._April_2012%2C_D%C3%BCsseldorf.jpg",
@@ -406,6 +411,8 @@ export const createGame = (input: NewGameInput): Game => {
       ...(input.mode === "replay" && input.replaySettings ? input.replaySettings : getSettings(input.mode)),
       ...(input.mode === "custom" && input.customSettings ? input.customSettings : {}),
       ...(input.mode === "spotify-generator" && input.spotifyAdvanced ? createSpotifySettings(input.spotifyAdvanced) : {}),
+      ...(input.mode === "image-art" && input.imageArtSettings ? input.imageArtSettings : {}),
+      ...(input.mode === "autoquartett" && input.autoquartettSettings ? input.autoquartettSettings : {}),
       name: input.gameName.trim() || getSettings(input.mode).name,
       stopCondition: input.stopCondition,
       cardChoiceCount: normalizeCardChoiceCount(input.cardChoiceCount),

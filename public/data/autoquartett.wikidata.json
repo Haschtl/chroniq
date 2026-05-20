@@ -232,7 +232,8 @@
       "sitelinks": 43,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Patent-Motorwagen%20Nr.1%20Benz%202.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q326248",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Benz_Patent-Motorwagen"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Benz_Patent-Motorwagen",
+      "powerKw": 1
     },
     {
       "id": "Q152917",
@@ -1108,7 +1109,8 @@
       "sitelinks": 35,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/A%20Ferrari%20F50.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q748461",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_F50"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_F50",
+      "powerKw": 382
     },
     {
       "id": "Q933646",
@@ -1744,7 +1746,8 @@
       "sitelinks": 31,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20FF%20%286735946493%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q943299",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_FF"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_FF",
+      "powerKw": 485
     },
     {
       "id": "Q56307011",
@@ -1760,7 +1763,8 @@
       "sitelinks": 29,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/2022%20Porsche%20Taycan%20GTS%20Sport%20Turismo.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q56307011",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Porsche_Taycan"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Porsche_Taycan",
+      "powerKw": 560
     },
     {
       "id": "Q67087185",
@@ -1777,7 +1781,8 @@
       "sitelinks": 27,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/2022%20Lamborghini%20Sian%20FKP%2037.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q67087185",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lamborghini_Si%C3%A1n_FKP_37"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lamborghini_Si%C3%A1n_FKP_37",
+      "powerKw": 602
     },
     {
       "id": "Q28790462",
@@ -1794,7 +1799,8 @@
       "sitelinks": 23,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20812%20Superfast%20IMG%208829.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q28790462",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_812_Superfast"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_812_Superfast",
+      "powerKw": 588
     },
     {
       "id": "Q1147816",
@@ -1812,7 +1818,8 @@
       "sitelinks": 22,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Koenigsegg-CCR-%2704.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1147816",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CCR"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CCR",
+      "powerKw": 593
     },
     {
       "id": "Q117309045",
@@ -1831,7 +1838,8 @@
       "sitelinks": 22,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Lamborghini%20Revuelto%20-%202024%20%2854326344793%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q117309045",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lamborghini_Revuelto"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lamborghini_Revuelto",
+      "powerKw": 747
     },
     {
       "id": "Q96417982",
@@ -1846,7 +1854,8 @@
       "sitelinks": 21,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Cadillac%20Lyriq%20Auto%20Zuerich%202024%20DSC%206620.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q96417982",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cadillac_Lyriq"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cadillac_Lyriq",
+      "powerKw": 225
     },
     {
       "id": "Q1993487",
@@ -1864,7 +1873,8 @@
       "sitelinks": 21,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/2015-03-03%20Geneva%20Motor%20Show%203305.JPG",
       "sourceUrl": "http://www.wikidata.org/entity/Q1993487",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CC8S"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CC8S",
+      "powerKw": 482
     },
     {
       "id": "Q50379367",
@@ -1881,7 +1891,8 @@
       "sitelinks": 21,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Rimac%20Nevera.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q50379367",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Rimac_Nevera"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Rimac_Nevera",
+      "powerKw": 1400
     },
     {
       "id": "Q66587547",
@@ -1898,7 +1909,8 @@
       "sitelinks": 20,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Bugatti%20Centodieci%206.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q66587547",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bugatti_Centodieci"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bugatti_Centodieci",
+      "powerKw": 1177
     },
     {
       "id": "Q107324636",
@@ -1915,7 +1927,8 @@
       "sitelinks": 19,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20296%20GTB%20DSC%206997.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q107324636",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_296"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_296",
+      "powerKw": 610
     },
     {
       "id": "Q1364665",
@@ -1933,7 +1946,8 @@
       "sitelinks": 19,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/1948%20Tucker%20Torpedo%208511815871.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1364665",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tucker_48"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tucker_48",
+      "powerKw": 123
     },
     {
       "id": "Q1628028",
@@ -1948,7 +1962,8 @@
       "sitelinks": 18,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Mazda-r360-coupe01.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1628028",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_R360"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_R360",
+      "powerKw": 12
     },
     {
       "id": "Q2447885",
@@ -1963,7 +1978,8 @@
       "sitelinks": 16,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Nigel%20Mansell%20Ferrari%20F1%20%2816032819141%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q2447885",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_640"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_640",
+      "powerKw": 492
     },
     {
       "id": "Q2448513",
@@ -1978,7 +1994,8 @@
       "sitelinks": 16,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20F1-87.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q2448513",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_F1/87"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_F1/87",
+      "powerKw": 485
     },
     {
       "id": "Q1881419",
@@ -1994,7 +2011,8 @@
       "sitelinks": 14,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/MG%20A%20Coupe%20Classic-Gala%202021%201X7A0279.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1881419",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/MG_MGA"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/MG_MGA",
+      "powerKw": 53
     },
     {
       "id": "Q1914654",
@@ -2010,7 +2028,8 @@
       "sitelinks": 13,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Mazda%20CAROL%20GX%20%28DBA-HB36S%29%20front.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1914654",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_Carol"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_Carol",
+      "powerKw": 38
     },
     {
       "id": "Q113696825",
@@ -2028,7 +2047,8 @@
       "sitelinks": 12,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Koenigsegg%20CC850%20Auto%20Zuerich%202025%20DSC%203655.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q113696825",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CC850"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Koenigsegg_CC850",
+      "powerKw": 1019
     },
     {
       "id": "Q378799",
@@ -2043,7 +2063,8 @@
       "sitelinks": 12,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/MAZDA%20AZ-1.JPG",
       "sourceUrl": "http://www.wikidata.org/entity/Q378799",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Autozam_AZ-1"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Autozam_AZ-1",
+      "powerKw": 47
     },
     {
       "id": "Q113960878",
@@ -2060,7 +2081,8 @@
       "sitelinks": 12,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Pagani%20Utopia%20%2853048624118%29%20%28cropped%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q113960878",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pagani_Utopia"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pagani_Utopia",
+      "powerKw": 635
     },
     {
       "id": "Q391841",
@@ -2075,7 +2097,8 @@
       "sitelinks": 12,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/%C5%A0koda%20110%20R%201977.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q391841",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/%C5%A0koda_110_R"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/%C5%A0koda_110_R",
+      "powerKw": 46
     },
     {
       "id": "Q1989109",
@@ -2090,7 +2113,8 @@
       "sitelinks": 11,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20375%20mm.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1989109",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_375_MM"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ferrari_375_MM",
+      "powerKw": 250
     },
     {
       "id": "Q1636949",
@@ -2105,7 +2129,8 @@
       "sitelinks": 11,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Mazda%20Chantez.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q1636949",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_Chantez"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_Chantez",
+      "powerKw": 26
     },
     {
       "id": "Q64019734",
@@ -2122,7 +2147,8 @@
       "sitelinks": 10,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Hispano%20Suiza%20Carmen%20%2833552532248%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q64019734",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hispano-Suiza_Carmen"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hispano-Suiza_Carmen",
+      "powerKw": 749
     },
     {
       "id": "Q136224",
@@ -2138,7 +2164,8 @@
       "sitelinks": 9,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/ZIL-112S.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q136224",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/ZIL-112_Sports"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/ZIL-112_Sports",
+      "powerKw": 177
     },
     {
       "id": "Q7292686",
@@ -2153,7 +2180,8 @@
       "sitelinks": 8,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Land%20Rover%20Range%20Rover%20Autobiography%20L%20L460%20Fuji%20White%20%282%29.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q7292686",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Range_Rover_(L405)"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Range_Rover_(L405)",
+      "powerKw": 4781
     },
     {
       "id": "Q6143187",
@@ -2168,7 +2196,8 @@
       "vehicleClass": "Lastkraftwagen",
       "sitelinks": 8,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Mazda-B360.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q6143187"
+      "sourceUrl": "http://www.wikidata.org/entity/Q6143187",
+      "powerKw": 15
     },
     {
       "id": "Q6138161",
@@ -2184,7 +2213,8 @@
       "sitelinks": 7,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Mazda%20k360.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q6138161",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_K360"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mazda_K360",
+      "powerKw": 8
     },
     {
       "id": "Q18819737",
@@ -2199,7 +2229,8 @@
       "country": "Deutschland",
       "sitelinks": 5,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Tempo%20G1200%201939.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q18819737"
+      "sourceUrl": "http://www.wikidata.org/entity/Q18819737",
+      "powerKw": 28
     },
     {
       "id": "Q85784137",
@@ -2215,7 +2246,8 @@
       "sitelinks": 4,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Maserati%20150%20GT%20-%20Museo%20Enzo%20Ferrari%20-%20fvr.jpg",
       "sourceUrl": "http://www.wikidata.org/entity/Q85784137",
-      "wikipediaUrl": "https://en.wikipedia.org/wiki/Maserati_150_GT"
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Maserati_150_GT",
+      "powerKw": 96
     },
     {
       "id": "Q20749279",
@@ -2232,7 +2264,8 @@
       "vehicleClass": "Mittelklasse",
       "sitelinks": 2,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/BMW%201502%20%284903004716%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q20749279"
+      "sourceUrl": "http://www.wikidata.org/entity/Q20749279",
+      "powerKw": 55
     },
     {
       "id": "Q108811029",
@@ -2247,7 +2280,8 @@
       "vehicleClass": "Sportwagen",
       "sitelinks": 2,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Lamborghini%20Hurac%C3%A1n%20STO%20IMG%209892.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q108811029"
+      "sourceUrl": "http://www.wikidata.org/entity/Q108811029",
+      "powerKw": 471
     },
     {
       "id": "Q12032786",
@@ -2262,7 +2296,8 @@
       "vehicleClass": "Phaeton",
       "sitelinks": 2,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/RAF%2030%20HP%20car%20of%20the%20Vienna%20Voluntary%20Rescue%20Society%20%281909%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q12032786"
+      "sourceUrl": "http://www.wikidata.org/entity/Q12032786",
+      "powerKw": 22
     },
     {
       "id": "Q138511810",
@@ -2278,7 +2313,8 @@
       "vehicleClass": "Hypercar",
       "sitelinks": 1,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/24h%20Le%20Mans%202025%20-%20WGI%20%2866%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q138511810"
+      "sourceUrl": "http://www.wikidata.org/entity/Q138511810",
+      "powerKw": 544
     },
     {
       "id": "Q123616265",
@@ -2295,7 +2331,8 @@
       "vehicleClass": "Peugeot 406 Coupé",
       "sitelinks": 1,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/2004%20Peugeot%20406%20Coupe%202.2%20Diesel%20%2814592403474%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q123616265"
+      "sourceUrl": "http://www.wikidata.org/entity/Q123616265",
+      "powerKw": 100
     },
     {
       "id": "Q41810613",
@@ -2309,7 +2346,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/250gte.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41810613"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41810613",
+      "powerKw": 177
     },
     {
       "id": "Q41811032",
@@ -2323,7 +2361,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20328%20GTS%20Front.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41811032"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41811032",
+      "powerKw": 201
     },
     {
       "id": "Q41811104",
@@ -2337,7 +2376,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20348%20ts%2C%20pre-facelift%20model.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41811104"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41811104",
+      "powerKw": 224
     },
     {
       "id": "Q41556833",
@@ -2351,7 +2391,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20360%20Modena%20%288008521005%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41556833"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41556833",
+      "powerKw": 294
     },
     {
       "id": "Q41811221",
@@ -2365,7 +2406,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20365%20GT4%20BB%20%2815868372458%29.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41811221"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41811221",
+      "powerKw": 283
     },
     {
       "id": "Q41811610",
@@ -2379,7 +2421,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ferrari%20512%20BBi%20%28Kirchzarten%29%20jm20682.jpg",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41811610"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41811610",
+      "powerKw": 250
     },
     {
       "id": "Q41552628",
@@ -2393,7 +2436,8 @@
       "heightMm": 0,
       "sitelinks": 0,
       "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Collection%20car%20Mus%C3%A9e%20Ferrari%20051.JPG",
-      "sourceUrl": "http://www.wikidata.org/entity/Q41552628"
+      "sourceUrl": "http://www.wikidata.org/entity/Q41552628",
+      "powerKw": 493
     }
   ]
 }

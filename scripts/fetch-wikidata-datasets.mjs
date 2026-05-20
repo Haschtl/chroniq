@@ -122,6 +122,9 @@ const toHorsepower = (amount, unitLabel) => {
   return Math.round(amount);
 };
 
+const horsepowerToKilowatt = (horsepower) =>
+  Number.isFinite(horsepower) && horsepower > 0 ? Math.round(horsepower * 0.73549875) : undefined;
+
 const normalizeAutoquartett = (data) => {
   const seen = new Set();
   return (data.results?.bindings ?? [])
@@ -141,6 +144,7 @@ const normalizeAutoquartett = (data) => {
         model,
         year: yearValue(binding, "inception"),
         horsepower,
+        powerKw: horsepowerToKilowatt(horsepower),
         topSpeedKmh: topSpeedKmh && topSpeedKmh > 0 ? topSpeedKmh : undefined,
         massKg: numberValue(binding, "mass"),
         lengthMm: numberValue(binding, "length"),

@@ -92,6 +92,7 @@ import type {
   Player,
   RoundCorrectionClaim,
   RoundResult,
+  StaticAdvancedSettings,
   StopCondition,
   CustomSetupState,
 } from "./types";
@@ -115,13 +116,13 @@ const customExampleDatasets: {
     mapping: {
       title: "model",
       artist: "manufacturer",
-      order: "horsepower",
+      order: "powerKw",
       image: "image",
       audio: "",
     },
-    orderLabel: "PS",
-    cardBackKeys: ["image", "model", "manufacturer"],
-    cardFrontKeys: ["image", "manufacturer", "model", "horsepower", "topSpeedKmh", "year"],
+    orderLabel: "Leistung",
+    cardBackKeys: ["image"],
+    cardFrontKeys: ["image", "manufacturer", "model", "powerKw", "topSpeedKmh", "year"],
     extraGuessKeys: ["manufacturer", "model"],
   },
   {
@@ -152,6 +153,36 @@ const builtInDatasetConfigs = {
     mapping: customExampleDatasets[0].mapping,
   },
 } satisfies Record<"image-art" | "autoquartett", { path: string; mapping: CustomSetupState["mapping"] }>;
+
+type BuiltInMode = "image-art" | "autoquartett";
+
+const defaultBuiltInAdvanced: Record<BuiltInMode, StaticAdvancedSettings> = {
+  "image-art": {
+    orderKey: "year",
+    orderLabel: "Year",
+    cardBackKeys: ["image"],
+    cardFrontKeys: ["image", "title", "artist", "year", "movement", "collection"],
+    extraGuessKeys: ["artist", "title"],
+  },
+  autoquartett: {
+    orderKey: "powerKw",
+    orderLabel: "Leistung",
+    cardBackKeys: ["image"],
+    cardFrontKeys: ["image", "manufacturer", "model", "powerKw", "topSpeedKmh"],
+    extraGuessKeys: ["manufacturer", "model"],
+  },
+};
+
+const normalizeStaticAdvancedSettings = (
+  value: StaticAdvancedSettings | undefined,
+  fallback: StaticAdvancedSettings,
+): StaticAdvancedSettings => ({
+  orderKey: value?.orderKey || fallback.orderKey,
+  orderLabel: value?.orderLabel || fallback.orderLabel,
+  cardBackKeys: value?.cardBackKeys?.length ? value.cardBackKeys : fallback.cardBackKeys,
+  cardFrontKeys: value?.cardFrontKeys?.length ? value.cardFrontKeys : fallback.cardFrontKeys,
+  extraGuessKeys: value?.extraGuessKeys ?? fallback.extraGuessKeys,
+});
 
 interface FooterAction {
   key: string;
@@ -379,9 +410,17 @@ export function HomePage() {
   const [customExampleKey, setCustomExampleKey] = useState("");
   const [customExampleLoading, setCustomExampleLoading] = useState(false);
   const [autoquartettLoadError, setAutoquartettLoadError] = useState("");
+  const [builtInAdvanced, setBuiltInAdvanced] = useState<Record<BuiltInMode, StaticAdvancedSettings>>({
+    "image-art": normalizeStaticAdvancedSettings(savedSetup?.builtInAdvanced?.["image-art"], defaultBuiltInAdvanced["image-art"]),
+    autoquartett: normalizeStaticAdvancedSettings(savedSetup?.builtInAdvanced?.autoquartett, defaultBuiltInAdvanced.autoquartett),
+  });
   const [builtInDatasetCounts, setBuiltInDatasetCounts] = useState<Record<"image-art" | "autoquartett", number>>({
     "image-art": 0,
     autoquartett: 0,
+  });
+  const [builtInDatasetColumns, setBuiltInDatasetColumns] = useState<Record<BuiltInMode, string[]>>({
+    "image-art": [],
+    autoquartett: [],
   });
   const [replayHistoryId, setReplayHistoryId] = useState(savedSetup?.replayHistoryId ?? "");
   const [cardChoiceCount, setCardChoiceCount] = useState(savedSetup?.cardChoiceCount ?? 1);
@@ -438,6 +477,10 @@ export function HomePage() {
           "image-art": imageArtEntries.length,
           autoquartett: autoquartettEntries.length,
         });
+        setBuiltInDatasetColumns({
+          "image-art": getEntryColumns(imageArtEntries),
+          autoquartett: getEntryColumns(autoquartettEntries),
+        });
       }
     }).catch(() => undefined);
     return () => {
@@ -460,6 +503,7 @@ export function HomePage() {
           spotifyGeneratedCount: spotifySetup.generatedCount,
           spotifyExhausted: spotifySetup.exhausted,
           spotifyAdvanced: spotifySetup.advanced,
+          builtInAdvanced,
           custom: customSetup,
           replayHistoryId,
           spotifyPreview: spotifySetup.preview,
@@ -472,6 +516,7 @@ export function HomePage() {
   }, [
     gameName,
     cardChoiceCount,
+    builtInAdvanced,
     customSetup,
     mode,
     normalizedPlayers,
@@ -533,6 +578,13 @@ export function HomePage() {
       }
       return next;
     });
+  };
+
+  const updateBuiltInAdvanced = (mode: BuiltInMode, patch: Partial<StaticAdvancedSettings>) => {
+    setBuiltInAdvanced((current) => ({
+      ...current,
+      [mode]: normalizeStaticAdvancedSettings({ ...current[mode], ...patch }, defaultBuiltInAdvanced[mode]),
+    }));
   };
 
   const loadCustomUrl = async () => {
@@ -631,7 +683,9 @@ export function HomePage() {
         customEntries: customSetup.entries,
         customSettings: createCustomGameSettings(customSetup),
         imageArtEntries,
+        imageArtSettings: createBuiltInGameSettings("image-art", builtInAdvanced["image-art"]),
         autoquartettEntries,
+        autoquartettSettings: createBuiltInGameSettings("autoquartett", builtInAdvanced.autoquartett),
         spotifyEntries: spotifyPool?.entries,
         spotifyGeneratedCount: spotifyPool?.generatedCount,
         spotifyExhausted: spotifyPool?.exhausted,
@@ -731,6 +785,14 @@ export function HomePage() {
             <SpotifyGeneratorSetup
               setup={spotifySetup}
               spotifyConnector={spotifyConnector}
+            />
+          ) : null}
+          {mode === "image-art" || mode === "autoquartett" ? (
+            <BuiltInAdvancedOptions
+              columns={builtInDatasetColumns[mode].length ? builtInDatasetColumns[mode] : defaultBuiltInAdvanced[mode].cardFrontKeys}
+              mode={mode}
+              value={builtInAdvanced[mode]}
+              onChange={(patch) => updateBuiltInAdvanced(mode, patch)}
             />
           ) : null}
           {mode === "custom" ? (
@@ -2024,6 +2086,144 @@ const getCustomKeyOptions = (customSetup: CustomSetupState) => {
   return keys.map((key) => ({ key, label: getCustomKeyOptionLabel(key, customSetup) }));
 };
 
+function BuiltInAdvancedOptions({
+  columns,
+  mode,
+  onChange,
+  value,
+}: {
+  columns: string[];
+  mode: BuiltInMode;
+  onChange: (patch: Partial<StaticAdvancedSettings>) => void;
+  value: StaticAdvancedSettings;
+}) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
+  const options = getBuiltInKeyOptions(columns, value);
+  const toggleKey = (field: "cardBackKeys" | "cardFrontKeys" | "extraGuessKeys", key: string, checked: boolean) => {
+    const current = value[field];
+    const next = checked ? [...current, key] : current.filter((candidate) => candidate !== key);
+    onChange({ [field]: field === "extraGuessKeys" ? next : next.length ? next : defaultBuiltInAdvanced[mode][field] });
+  };
+
+  return (
+    <Accordion.Root className="spotify-advanced-root" collapsible type="single">
+      <Accordion.Item className="spotify-advanced-accordion" value="advanced">
+        <Accordion.Header>
+          <Accordion.Trigger className="spotify-advanced-trigger">
+            <span>{translate("spotify.advanced")}</span>
+            <small>
+              {value.cardBackKeys.map((key) => getBuiltInKeyLabel(key)).join(" + ")} · {getBuiltInKeyLabel(value.orderKey)} · {value.cardFrontKeys.length} Card-Front
+            </small>
+            <b aria-hidden="true">⌄</b>
+          </Accordion.Trigger>
+        </Accordion.Header>
+        <Accordion.Content className="spotify-advanced-content">
+          <KeyChipSelect
+            label={translate("spotify.cardBack")}
+            options={options}
+            value={value.cardBackKeys}
+            onToggle={(key, checked) => toggleKey("cardBackKeys", key, checked)}
+          />
+          <div className="spotify-advanced-grid">
+            <div className="spotify-display-options p-0" style={{ padding: 0, borderTopWidth: 0 }}>
+              <span>{translate("spotify.orderBy")}</span>
+            </div>
+            <label className="field">
+              <select
+                value={value.orderKey}
+                onChange={(event) => onChange({ orderKey: event.target.value, orderLabel: getBuiltInKeyLabel(event.target.value) })}
+              >
+                {options.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <KeyChipSelect
+            label={translate("spotify.extraGuess")}
+            options={options}
+            value={value.extraGuessKeys}
+            onToggle={(key, checked) => toggleKey("extraGuessKeys", key, checked)}
+          />
+          <KeyChipSelect
+            label={translate("spotify.cardFront")}
+            options={options}
+            value={value.cardFrontKeys}
+            onToggle={(key, checked) => toggleKey("cardFrontKeys", key, checked)}
+          />
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion.Root>
+  );
+}
+
+function KeyChipSelect({
+  label,
+  onToggle,
+  options,
+  value,
+}: {
+  label: string;
+  onToggle: (key: string, checked: boolean) => void;
+  options: { key: string; label: string }[];
+  value: string[];
+}) {
+  return (
+    <div className="spotify-display-options custom-key-options" aria-label={label}>
+      <span>{label}</span>
+      <div>
+        {options.map((option) => (
+          <label className={value.includes(option.key) ? "spotify-display-chip active" : "spotify-display-chip"} key={option.key}>
+            <input checked={value.includes(option.key)} type="checkbox" onChange={(event) => onToggle(option.key, event.target.checked)} />
+            <span className="spotify-display-check" aria-hidden="true">
+              <Check size={12} strokeWidth={3} />
+            </span>
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const getBuiltInKeyOptions = (columns: string[], value: StaticAdvancedSettings) =>
+  [...columns, ...value.cardBackKeys, ...value.cardFrontKeys, ...value.extraGuessKeys, value.orderKey]
+    .filter((key, index, all): key is string => Boolean(key) && all.indexOf(key) === index)
+    .filter((key, _, all) => key !== "horsepower" || !all.includes("powerKw"))
+    .map((key) => ({ key, label: getBuiltInKeyLabel(key) }));
+
+const getBuiltInKeyLabel = (key: string) => {
+  const knownLabels: Record<string, string> = {
+    artist: "Artist",
+    collection: "Collection",
+    horsepower: "Leistung",
+    image: "Image",
+    manufacturer: "Manufacturer",
+    model: "Model",
+    movement: "Movement",
+    powerKw: "Leistung",
+    title: "Title",
+    topSpeedKmh: "Top Speed",
+    year: "Year",
+  };
+  return knownLabels[key] ?? key;
+};
+
+const getBuiltInKeyMeta = (key: string): Pick<CardSelector, "description" | "suffix"> => {
+  const knownMeta: Record<string, Pick<CardSelector, "description" | "suffix">> = {
+    heightMm: { description: "Height", suffix: " mm" },
+    lengthMm: { description: "Length", suffix: " mm" },
+    massKg: { description: "Mass", suffix: " kg" },
+    powerKw: { description: "Power", suffix: " kW" },
+    topSpeedKmh: { description: "Top speed", suffix: " km/h" },
+    widthMm: { description: "Width", suffix: " mm" },
+  };
+  return knownMeta[key] ?? {};
+};
+
 const getCustomKeyOptionLabel = (key: string, customSetup: CustomSetupState) => {
   if (key === "image") return "Bild";
   if (key === "audioPreview") return "Audio";
@@ -2043,8 +2243,52 @@ async function loadBuiltInDataset(mode: "image-art" | "autoquartett") {
     format: "json",
     mapping: config.mapping,
   });
-  return setup.entries;
+  return mode === "autoquartett" ? setup.entries.map(withPowerKilowatt) : setup.entries;
 }
+
+const withPowerKilowatt = (entry: GuessEntry): GuessEntry => {
+  if (typeof entry.powerKw === "number") return entry;
+  return typeof entry.horsepower === "number" ? { ...entry, powerKw: horsepowerToKilowatt(entry.horsepower) } : entry;
+};
+
+const createBuiltInGameSettings = (mode: BuiltInMode, advanced: StaticAdvancedSettings): GameSettings => ({
+  name: mode === "autoquartett" ? "Autoquartett" : "Image artist",
+  mode,
+  stopCondition: { type: "maxPoints", points: 10 },
+  cardChoiceCount: 3,
+  presentSelector: getStaticPresentSelector(advanced.cardBackKeys[0] ?? "image"),
+  presentSelectors: advanced.cardBackKeys.map(getStaticPresentSelector),
+  orderSelector: {
+    key: advanced.orderKey,
+    dir: "asc",
+  },
+  extraGuessSelectors: advanced.extraGuessKeys.map((key) => ({ label: getBuiltInKeyLabel(key), key, type: key === advanced.orderKey ? "number" : "text-loose" })),
+  displaySelectors: advanced.cardFrontKeys.map((key) => ({
+    label: getBuiltInKeyLabel(key),
+    key,
+    type: isStaticImageKey(key) ? "image" : "text",
+    ...getBuiltInKeyMeta(key),
+  })),
+});
+
+const getStaticPresentSelector = (key: string): GameSettings["presentSelector"] => {
+  if (isStaticImageKey(key)) return { type: "image", key };
+  if (key === "audioPreview") return { type: "audio", key };
+  return { type: "auto", key };
+};
+
+const isStaticImageKey = (key: string) => key === "image" || key === "albumCover";
+
+const getEntryColumns = (entries: GuessEntry[]) =>
+  Array.from(
+    new Set(
+      entries.flatMap((entry) =>
+        Object.keys(entry).filter((key) => !["id", "used", "guessedValues", "albumCover"].includes(key)),
+      ),
+    ),
+  );
+
+const horsepowerToKilowatt = (horsepower: number) => Math.round(horsepower * 0.73549875);
 
 function SpotifyPlayback({
   accessToken,
@@ -2416,10 +2660,14 @@ function CardInfoOverlay({ values }: { values: CardTextValue[] }) {
   return (
     <div className="song-card-info">
       <div>
-        {primary ? <strong>{primary.value}</strong> : null}
-        {secondary ? <span>{secondary.value}</span> : null}
+        {primary ? <strong title={primary.description}>{primary.value}</strong> : null}
+        {secondary ? <span title={secondary.description}>{secondary.value}</span> : null}
       </div>
-      {meta.length ? <b>{meta.map((value) => value.value).join(" · ")}</b> : null}
+      {meta.length ? (
+        <b title={meta.map((value) => value.description).filter(Boolean).join(" · ") || undefined}>
+          {meta.map((value) => value.value).join(" · ")}
+        </b>
+      ) : null}
     </div>
   );
 }
@@ -3417,7 +3665,7 @@ const getEntryImage = (entry: GuessEntry) => {
 };
 
 type CardSelector = NonNullable<GameSettings["displaySelectors"]>[number];
-type CardTextValue = { key: string; value: string };
+type CardTextValue = { description?: string; key: string; value: string };
 
 const entryFieldLabelKeys: Record<string, TranslationKey> = {
   album: "label.album",
@@ -3427,10 +3675,11 @@ const entryFieldLabelKeys: Record<string, TranslationKey> = {
   audioPreview: "label.song",
   cover: "label.cover",
   durationMs: "label.duration",
-  horsepower: "label.value",
+  horsepower: "label.power",
   image: "label.image",
   manufacturer: "label.manufacturer",
   model: "label.model",
+  powerKw: "label.power",
   title: "label.title",
   year: "label.year",
 };
@@ -3460,7 +3709,7 @@ const normalizeCardSelectors = (
   const hasOrderKey = normalized.some((selector) => selector.key === orderKey);
 
   return includeOrderValue && !hasOrderKey
-    ? [...normalized, { label: orderKey, key: orderKey, type: "text" }]
+    ? [...normalized, { label: getBuiltInKeyLabel(orderKey), key: orderKey, type: "text", ...getBuiltInKeyMeta(orderKey) }]
     : normalized;
 };
 
@@ -3476,13 +3725,17 @@ const getSelectorImage = (entry: GuessEntry, selectors: CardSelector[]) => {
 const getSelectorTextValues = (entry: GuessEntry, selectors: CardSelector[], showGuesses: boolean): CardTextValue[] =>
   selectors
     .filter((selector) => selector.type !== "image" && selector.key !== "audioPreview")
-    .map((selector) => ({
-      key: selector.key,
-      value:
+    .map((selector) => {
+      const rawValue =
         selector.key === "title" || selector.key === "artist"
           ? getEntryDisplayText(entry, selector.key, showGuesses, selector.label)
-          : formatEntryValue(selector.key, entry[selector.key]),
-    }))
+          : formatEntryValue(selector.key, entry[selector.key]);
+      return {
+        description: selector.description,
+        key: selector.key,
+        value: rawValue ? `${selector.prefix ?? ""}${rawValue}${selector.suffix ?? ""}` : "",
+      };
+    })
     .filter((value) => value.value !== "");
 
 const getEntryDisplayText = (entry: GuessEntry, key: "title" | "artist", showGuesses: boolean, fallback: string) => {
@@ -3679,13 +3932,20 @@ const hasAudioKey = (settings: GameSettings) =>
   hasPresentKey(settings, "audioPreview") ||
   Boolean(settings.displaySelectors?.some((selector) => selector.key === "audioPreview"));
 
-const getPresentSelectorsForCard = (settings: GameSettings): GameSettings["displaySelectors"] =>
-  (settings.presentSelectors ?? [settings.presentSelector])
-    .map((selector) => ({
-      label: selector.key,
+const getPresentSelectorsForCard = (settings: GameSettings): GameSettings["displaySelectors"] => {
+  const displaySelectorByKey = new Map(settings.displaySelectors?.map((selector) => [selector.key, selector]) ?? []);
+  return (settings.presentSelectors ?? [settings.presentSelector]).map((selector) => {
+    const displaySelector = displaySelectorByKey.get(selector.key);
+    return {
+      label: displaySelector?.label ?? getBuiltInKeyLabel(selector.key),
       key: selector.key,
       type: selector.type === "image" ? "image" : "text",
-    }));
+      prefix: displaySelector?.prefix,
+      suffix: displaySelector?.suffix ?? getBuiltInKeyMeta(selector.key).suffix,
+      description: displaySelector?.description ?? getBuiltInKeyMeta(selector.key).description,
+    };
+  });
+};
 
 const getScoreDotStyle = (index: number, count: number) => {
   const spread = Math.min(96, Math.max(28, (count - 1) * 28));

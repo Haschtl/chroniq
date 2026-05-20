@@ -59,11 +59,29 @@ const normalizeSetup = (setup: unknown): SetupState | undefined => {
     spotifyGeneratedCount: asNumber(setup.spotifyGeneratedCount, normalizeEntries(setup.spotifyEntries)?.length ?? 0),
     spotifyExhausted: Boolean(setup.spotifyExhausted),
     spotifyAdvanced: normalizeSpotifyAdvancedSettings(isRecord(setup.spotifyAdvanced) ? setup.spotifyAdvanced : undefined),
+    builtInAdvanced: normalizeBuiltInAdvanced(setup.builtInAdvanced),
     custom: normalizeCustomSetup(setup.custom),
     replayHistoryId: typeof setup.replayHistoryId === "string" ? setup.replayHistoryId : "",
     spotifyPreview: isRecord(setup.spotifyPreview) ? (setup.spotifyPreview as SetupState["spotifyPreview"]) : undefined,
     stopCondition: normalizeStopCondition(setup.stopCondition),
   };
+};
+
+const normalizeBuiltInAdvanced = (value: unknown): SetupState["builtInAdvanced"] => {
+  if (!isRecord(value)) return undefined;
+  const result: SetupState["builtInAdvanced"] = {};
+  for (const mode of ["image-art", "autoquartett"] as const) {
+    const settings = value[mode];
+    if (!isRecord(settings)) continue;
+    result[mode] = {
+      orderKey: typeof settings.orderKey === "string" ? settings.orderKey : "",
+      orderLabel: typeof settings.orderLabel === "string" ? settings.orderLabel : "",
+      cardBackKeys: Array.isArray(settings.cardBackKeys) ? settings.cardBackKeys.filter((key): key is string => typeof key === "string") : [],
+      cardFrontKeys: Array.isArray(settings.cardFrontKeys) ? settings.cardFrontKeys.filter((key): key is string => typeof key === "string") : [],
+      extraGuessKeys: Array.isArray(settings.extraGuessKeys) ? settings.extraGuessKeys.filter((key): key is string => typeof key === "string") : [],
+    };
+  }
+  return Object.keys(result).length ? result : undefined;
 };
 
 const normalizeCustomSetup = (custom: unknown) => {
