@@ -41,6 +41,10 @@ interface SpotifyArtistRef {
   name?: string;
 }
 
+interface SpotifyArtist extends SpotifyArtistRef {
+  genres?: string[];
+}
+
 interface SpotifyAlbum {
   name?: string;
   release_date?: string;
@@ -366,6 +370,22 @@ export const pauseSpotifyPlayback = async (accessToken: string) => {
   await spotifyFetch<void>(accessToken, "/me/player/pause", { method: "PUT" });
 };
 
+export const getSpotifyPlaybackProgress = async (accessToken: string) => {
+  const state = await spotifyFetch<{
+    is_playing?: boolean;
+    progress_ms?: number;
+    item?: { id?: string; duration_ms?: number } | null;
+  }>(accessToken, "/me/player");
+  const durationMs = state.item?.duration_ms ?? 0;
+  const progressMs = state.progress_ms ?? 0;
+  return {
+    durationMs,
+    isPlaying: Boolean(state.is_playing),
+    progress: durationMs > 0 ? Math.min(1, Math.max(0, progressMs / durationMs)) : 0,
+    trackId: state.item?.id,
+  };
+};
+
 const fetchSpotifyProfile = async (accessToken: string) => {
   const response = await fetch(PROFILE_URL, {
     headers: {
@@ -488,13 +508,59 @@ const getArtistTracks = async (accessToken: string, artistId: string) => {
   return data.tracks ?? [];
 };
 
-const getTrackSeedTracks = async (accessToken: string, trackId: string) => {
+const getTrackSeedTracks = async (accessToken: string, trackId: string) => getTrackRadioTracks(accessToken, trackId, 120);
+
+const getTrackRadioTracks = async (accessToken: string, trackId: string, limit: number) => {
   const seedTrack = await spotifyFetch<SpotifyTrack>(accessToken, `/tracks/${trackId}`);
   const artistId = seedTrack.artists?.find((artist) => artist.id)?.id;
   if (!artistId) return [seedTrack];
-  const artistTracks = await getArtistTracks(accessToken, artistId);
-  return [seedTrack, ...artistTracks];
+  const artist = await getArtist(accessToken, artistId).catch(() => undefined);
+  const genres = artist?.genres?.filter(Boolean).slice(0, 3) ?? [];
+  if (genres.length === 0) {
+    return [seedTrack, ...shuffleItems(await getArtistTracks(accessToken, artistId))];
+  }
+
+  const targetYear = Number(seedTrack.album?.release_date?.slice(0, 4));
+  const yearFilters = Number.isFinite(targetYear)
+    ? [` year:${Math.max(1900, targetYear - 8)}-${Math.min(new Date().getFullYear(), targetYear + 8)}`, ""]
+    : [""];
+  const searches = genres.flatMap((genre) =>
+    yearFilters.map((yearFilter, index) =>
+      searchSpotifyTracks(
+        accessToken,
+        `genre:"${genre}"${yearFilter}`,
+        50,
+        index === 0 ? randomOffset(220) : randomOffset(700),
+      ),
+    ),
+  );
+  const radioTracks = (await Promise.all(searches)).flat();
+  const seedArtistIds = new Set((seedTrack.artists ?? []).map((artistRef) => artistRef.id).filter(Boolean));
+  const similarArtistTracks = radioTracks.filter(
+    (track) => !(track.artists ?? []).some((artistRef) => artistRef.id && seedArtistIds.has(artistRef.id)),
+  );
+
+  return [seedTrack, ...shuffleItems(dedupeTracks(similarArtistTracks)).slice(0, limit)];
 };
+
+const getArtist = (accessToken: string, artistId: string) =>
+  spotifyFetch<SpotifyArtist>(accessToken, `/artists/${artistId}`);
+
+const searchSpotifyTracks = async (accessToken: string, query: string, limit: number, offset: number) => {
+  const data = await spotifyFetch<{ tracks?: { items?: SpotifyTrack[] } }>(
+    accessToken,
+    `/search?${new URLSearchParams({
+      q: query,
+      type: "track",
+      limit: String(Math.max(1, Math.min(50, limit))),
+      offset: String(Math.max(0, Math.min(900, offset))),
+      market: "from_token",
+    }).toString()}`,
+  );
+  return data.tracks?.items ?? [];
+};
+
+const randomOffset = (max: number) => Math.floor(Math.random() * Math.max(1, max));
 
 const getPlaylistRadioTracks = async (accessToken: string, playlistId: string, limit: number) => {
   const sample = await getPlaylistTracks(accessToken, playlistId, 0, 80);

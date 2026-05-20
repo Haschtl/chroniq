@@ -250,20 +250,6 @@ export function SpotifyGeneratorSetup({
       {setup.preview ? (
         <div className="spotify-seed-selection">
           <SpotifySeedCard preview={setup.preview} />
-          <div className="spotify-preload-row">
-            <span>
-              {setup.entries.length} Karten vorgeladen{setup.exhausted ? " · Quelle ausgeschöpft" : ""}
-            </span>
-            <button
-              className="secondary-button"
-              type="button"
-              disabled={setup.preloadLoading || !spotifyConnector || setup.exhausted}
-              onClick={preloadSpotifyBatch}
-            >
-              <Download size={15} />
-              {setup.preloadLoading ? "Lädt..." : "Batch nachladen"}
-            </button>
-          </div>
         </div>
       ) : null}
       {setup.results.length > 0 ? (
@@ -287,7 +273,15 @@ export function SpotifyGeneratorSetup({
           ))}
         </div>
       ) : setup.lookupLoading ? <p className="muted">Suche läuft...</p> : null}
-      <SpotifyAdvancedOptions value={setup.advanced} onChange={setup.setAdvanced} />
+      <SpotifyAdvancedOptions
+        canPreload={Boolean(spotifyConnector && setup.seed && !setup.exhausted)}
+        exhausted={setup.exhausted}
+        preloadedCount={setup.entries.length}
+        preloadLoading={setup.preloadLoading}
+        value={setup.advanced}
+        onChange={setup.setAdvanced}
+        onPreload={preloadSpotifyBatch}
+      />
     </div>
   );
 }
@@ -323,11 +317,21 @@ function SpotifySeedCard({
 }
 
 function SpotifyAdvancedOptions({
-  value,
+  canPreload,
+  exhausted,
   onChange,
+  onPreload,
+  preloadedCount,
+  preloadLoading,
+  value,
 }: {
+  canPreload: boolean;
+  exhausted: boolean;
   value: SpotifyAdvancedSettings;
   onChange: (value: SpotifyAdvancedSettings) => void;
+  onPreload: () => void;
+  preloadedCount: number;
+  preloadLoading: boolean;
 }) {
   const cardBackKeys = value.cardBackKeys?.length ? value.cardBackKeys : ["audioPreview" as SpotifyCardBackKey];
   const updateCardBackKey = (key: SpotifyCardBackKey, checked: boolean) => {
@@ -485,6 +489,20 @@ function SpotifyAdvancedOptions({
                 </label>
               ))}
             </div>
+          </div>
+          <div className="spotify-preload-row">
+            <span>
+              {preloadedCount} Karten vorgeladen{exhausted ? " · Quelle ausgeschöpft" : ""}
+            </span>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={preloadLoading || !canPreload}
+              onClick={onPreload}
+            >
+              <Download size={15} />
+              {preloadLoading ? "Lädt..." : "Batch nachladen"}
+            </button>
           </div>
         </Accordion.Content>
       </Accordion.Item>

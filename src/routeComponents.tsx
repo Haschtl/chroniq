@@ -61,6 +61,7 @@ import {
   ensureSpotifyPlaybackDevice,
   getSpotifyRedirectUri,
   getSpotifySafeDevUrl,
+  getSpotifyPlaybackProgress,
   hasSpotifyClientId,
   isUnsupportedSpotifyDevOrigin,
   pauseSpotifyPlayback,
@@ -1079,6 +1080,8 @@ export function GamePage() {
   const [connectorError, setConnectorError] = useState("");
   const [connectorConnecting, setConnectorConnecting] = useState(false);
   const [playbackPaused, setPlaybackPaused] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const progressAudioRef = useRef<HTMLAudioElement | null>(null);
   const playbackAudioRef = useRef<HTMLAudioElement | null>(null);
   const activePlaybackEntry = state.activeGame ? getActiveEntry(state.activeGame) : undefined;
 
@@ -1135,7 +1138,58 @@ export function GamePage() {
 
   useEffect(() => {
     setPlaybackPaused(false);
+    setAudioProgress(0);
   }, [activePlaybackEntry?.id]);
+
+  useEffect(() => {
+    const entry = activePlaybackEntry;
+    if (!entry) return;
+    const audio = entry.audioPreview;
+    const spotifyUri = typeof entry.spotifyUri === "string" ? entry.spotifyUri : undefined;
+    if (spotifyUri && spotifyConnector?.auth?.accessToken) return;
+    if (!isAudioValue(audio)) return;
+    const pollElement = () => playbackAudioRef.current;
+    const element = pollElement();
+    const updateProgress = () => {
+      const element = pollElement();
+      if (!element) return;
+      setAudioProgress(element.duration > 0 ? Math.min(1, Math.max(0, element.currentTime / element.duration)) : 0);
+    };
+    if (element && progressAudioRef.current !== element) {
+      progressAudioRef.current = element;
+    }
+    const interval = window.setInterval(updateProgress, 250);
+    element?.addEventListener("timeupdate", updateProgress);
+    element?.addEventListener("loadedmetadata", updateProgress);
+    element?.addEventListener("ended", updateProgress);
+    updateProgress();
+    return () => {
+      window.clearInterval(interval);
+      element?.removeEventListener("timeupdate", updateProgress);
+      element?.removeEventListener("loadedmetadata", updateProgress);
+      element?.removeEventListener("ended", updateProgress);
+    };
+  }, [activePlaybackEntry?.id, spotifyConnector?.auth?.accessToken]);
+
+  useEffect(() => {
+    const entry = activePlaybackEntry;
+    const accessToken = spotifyConnector?.auth?.accessToken;
+    if (!entry || !accessToken || typeof entry.spotifyUri !== "string") return;
+    let cancelled = false;
+    const updateProgress = () => {
+      getSpotifyPlaybackProgress(accessToken)
+        .then((progress) => {
+          if (!cancelled) setAudioProgress(progress.progress);
+        })
+        .catch(() => undefined);
+    };
+    updateProgress();
+    const interval = window.setInterval(updateProgress, 900);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activePlaybackEntry?.id, spotifyConnector?.auth?.accessToken]);
 
   useEffect(() => {
     const game = state.activeGame;
@@ -1191,6 +1245,7 @@ export function GamePage() {
       playbackAudioRef.current.pause();
       playbackAudioRef.current.currentTime = 0;
     }
+    setAudioProgress(0);
     if (spotifyConnector?.auth?.accessToken) {
       void pauseSpotifyPlayback(spotifyConnector.auth.accessToken).catch(() => undefined);
     }
@@ -1224,24 +1279,39 @@ export function GamePage() {
           paused={playbackPaused}
         />
       ) : null}
-      <div className="active-game-background" aria-hidden="true">
-        <Suspense fallback={null}>
-          <LineWaves
-            backgroundColor={lineWaveTheme.backgroundColor}
-            colors={lineWaveTheme.colors}
-            enableMouseInteraction
-            lineCount={26}
-            opacity={0.72}
-            speed={24}
-          />
-        </Suspense>
-      </div>
+      {game.phase !== "finished" ? (
+        <div className="active-game-background" aria-hidden="true">
+          <Suspense fallback={null}>
+            <LineWaves
+              backgroundColor={lineWaveTheme.backgroundColor}
+              colors={lineWaveTheme.colors}
+              enableMouseInteraction
+              lineCount={26}
+              opacity={0.72}
+              speed={24}
+            />
+          </Suspense>
+        </div>
+      ) : (
+        <CardGridMotionBackground game={game} />
+      )}
       <div className="play-panel">
         <div className="round-header">
           <div>
-            <p>Runde {game.roundNumber}</p>
-            <h1 style={{ color: activePlayer.color }}>
-              {activePlayer.name} ist dran
+            <p>
+              {game.phase === "finished"
+                ? `${game.roundNumber} Runden`
+                : `Runde ${game.roundNumber}`}
+            </p>
+            <h1
+              style={{
+                color:
+                  game.phase === "finished" ? undefined : activePlayer.color,
+              }}
+            >
+              {game.phase === "finished"
+                ? "Spiel beendet"
+                : `${activePlayer.name} ist dran`}
             </h1>
           </div>
         </div>
@@ -1272,6 +1342,7 @@ export function GamePage() {
             entry={activeEntry}
             player={activePlayer}
             paused={playbackPaused}
+            audioProgress={audioProgress}
             onTogglePause={togglePlayback}
             onSubmit={(index, values) =>
               updateGame(
@@ -1292,6 +1363,7 @@ export function GamePage() {
           <Challenge
             game={game}
             paused={playbackPaused}
+            audioProgress={audioProgress}
             onTogglePause={togglePlayback}
             onResolve={(claims) => updateGame(resolveRound(game, claims))}
           />
@@ -1301,6 +1373,7 @@ export function GamePage() {
           <RoundResultView
             game={game}
             paused={playbackPaused}
+            audioProgress={audioProgress}
             onTogglePause={togglePlayback}
             onNext={() => {
               stopPlayback();
@@ -1692,8 +1765,10 @@ function SortAndGuess({
   onTogglePause,
   player,
   paused,
+  audioProgress,
   onSubmit,
 }: {
+  audioProgress: number;
   game: Game;
   entry: GuessEntry;
   onTogglePause: () => void;
@@ -1737,6 +1812,7 @@ function SortAndGuess({
             {proposedIndex === undefined ? (
               <DraggableGuessCard
                 entry={entry}
+                audioProgress={audioProgress}
                 displaySelectors={game.settings.displaySelectors}
                 mode={game.settings.mode}
                 orderKey={key}
@@ -1781,6 +1857,7 @@ function SortAndGuess({
                 {proposedIndex === index ? (
                   <DraggableGuessCard
                     entry={entry}
+                    audioProgress={audioProgress}
                     displaySelectors={game.settings.displaySelectors}
                     mode={game.settings.mode}
                     orderKey={key}
@@ -2033,6 +2110,7 @@ function SpotifyPlayback({
 }
 
 function DraggableGuessCard({
+  audioProgress,
   displaySelectors,
   entry,
   mode,
@@ -2042,6 +2120,7 @@ function DraggableGuessCard({
   presentationSelectors,
   onTogglePause,
 }: {
+  audioProgress?: number;
   displaySelectors?: GameSettings["displaySelectors"];
   entry: GuessEntry;
   mode: GameMode;
@@ -2067,6 +2146,7 @@ function DraggableGuessCard({
       {...attributes}
     >
       <PlayCard
+        audioProgress={audioProgress}
         displaySelectors={displaySelectors}
         entry={entry}
         mode={mode}
@@ -2082,6 +2162,7 @@ function DraggableGuessCard({
 
 function PlayCard({
   animateReveal = false,
+  audioProgress,
   children,
   displaySelectors,
   entry,
@@ -2095,6 +2176,7 @@ function PlayCard({
   showOrderValue = true,
 }: {
   animateReveal?: boolean;
+  audioProgress?: number;
   children?: React.ReactNode;
   displaySelectors?: GameSettings["displaySelectors"];
   entry: GuessEntry;
@@ -2130,6 +2212,7 @@ function PlayCard({
 
   const targetRotation = revealed ? 180 : 0;
   const canZoomImage = Boolean(!isSongCard && activeImage);
+  const showAudioProgress = (backHasAudio || frontHasAudio) && audioProgress !== undefined;
 
   return (
     <motion.div
@@ -2164,11 +2247,13 @@ function PlayCard({
             </div>
           ) : null}
           {children}
+          {showAudioProgress ? <AudioProgressBar progress={audioProgress} /> : null}
         </div>
         <div className="song-card-face song-card-front">
           {frontImage ? <SafeImage fallback={<div className="song-card-cover-placeholder" />} image={frontImage} /> : <div className="song-card-cover-placeholder" />}
           {frontHasAudio ? <AudioOrb paused={paused} overlay enabled={canToggleAudio} onTogglePause={onTogglePause} /> : null}
           <CardInfoOverlay values={frontTextValues} />
+          {showAudioProgress ? <AudioProgressBar progress={audioProgress} /> : null}
         </div>
       </motion.div>
       {canZoomImage && activeImage ? (
@@ -2192,6 +2277,14 @@ function PlayCard({
       ) : null}
       {canZoomImage && activeImage ? <ImagePreviewDialog image={activeImage} onOpenChange={setImageDialogOpen} open={imageDialogOpen} /> : null}
     </motion.div>
+  );
+}
+
+function AudioProgressBar({ progress = 0 }: { progress?: number }) {
+  return (
+    <div className="song-card-audio-progress" aria-hidden="true">
+      <span style={{ transform: `scaleX(${Math.min(1, Math.max(0, progress))})` }} />
+    </div>
   );
 }
 
@@ -2375,11 +2468,13 @@ function ExtraGuesses({
 }
 
 function Challenge({
+  audioProgress,
   game,
   onResolve,
   onTogglePause,
   paused,
 }: {
+  audioProgress: number;
   game: Game;
   onResolve: (claims?: RoundCorrectionClaim[]) => void;
   onTogglePause: () => void;
@@ -2424,6 +2519,7 @@ function Challenge({
       </div>
       <CorrectionTimeline
         activeEntry={activeEntry}
+        audioProgress={audioProgress}
         claims={claims}
         game={game}
         insertIndex={proposedIndex}
@@ -2522,6 +2618,7 @@ function Challenge({
 
 function CorrectionTimeline({
   activeEntry,
+  audioProgress,
   claims,
   game,
   insertIndex,
@@ -2531,6 +2628,7 @@ function CorrectionTimeline({
   player,
 }: {
   activeEntry?: GuessEntry;
+  audioProgress: number;
   claims: RoundCorrectionClaim[];
   game: Game;
   insertIndex?: number;
@@ -2585,6 +2683,7 @@ function CorrectionTimeline({
                 <TimelineCard
                   displaySelectors={game.settings.displaySelectors}
                   entry={timeline[index]}
+                  audioProgress={displayEntry?.id === timeline[index].id ? audioProgress : undefined}
                   inserted={displayEntry?.id === timeline[index].id}
                   mode={game.settings.mode}
                   onTogglePause={displayEntry?.id === timeline[index].id ? onTogglePause : undefined}
@@ -2603,11 +2702,13 @@ function CorrectionTimeline({
 }
 
 function RoundResultView({
+  audioProgress,
   game,
   onTogglePause,
   onNext,
   paused,
 }: {
+  audioProgress: number;
   game: Game;
   onTogglePause: () => void;
   onNext: () => void;
@@ -2664,6 +2765,7 @@ function RoundResultView({
       </div>
       <TimelinePreview
         game={game}
+        audioProgress={audioProgress}
         insertedState={revealResult ? (result?.activePlayerCorrect ? "correct" : "wrong") : undefined}
         onTogglePause={onTogglePause}
         paused={paused}
@@ -2689,6 +2791,7 @@ function ResultLottie({ correct }: { correct: boolean }) {
 }
 
 function TimelinePreview({
+  audioProgress,
   entry,
   game,
   insertIndex,
@@ -2698,6 +2801,7 @@ function TimelinePreview({
   player,
   revealInserted = false,
 }: {
+  audioProgress?: number;
   entry?: GuessEntry;
   game: Game;
   insertIndex?: number;
@@ -2720,6 +2824,7 @@ function TimelinePreview({
             <TimelineCard
               displaySelectors={game.settings.displaySelectors}
               entry={item}
+              audioProgress={entry?.id === item.id ? audioProgress : undefined}
               inserted={entry?.id === item.id}
               insertedState={entry?.id === item.id ? insertedState : undefined}
               key={item.id}
@@ -2802,6 +2907,57 @@ function FinishedGame({ game }: { game: Game }) {
   );
 }
 
+function CardGridMotionBackground({ game }: { game: Game }) {
+  const cards = getGameGridCards(game);
+  if (cards.length === 0) return null;
+  const rows = createGridMotionRows(cards, 4);
+
+  return (
+    <div className="grid-motion-background" aria-hidden="true">
+      <div className="grid-motion-shade" />
+      <div className="grid-motion-track">
+        {rows.map((row, rowIndex) => (
+          <motion.div
+            animate={{ x: rowIndex % 2 === 0 ? ["0%", "-50%"] : ["-50%", "0%"] }}
+            className="grid-motion-row"
+            key={rowIndex}
+            transition={{ duration: 42 + rowIndex * 8, ease: "linear", repeat: Infinity }}
+          >
+            {[...row, ...row].map((entry, index) => {
+              const image = getEntryImage(entry);
+              return (
+                <div className="grid-motion-card" key={`${entry.id}-${index}`}>
+                  {image ? <SafeImage image={image} /> : <span>{String(entry.title ?? entry.name ?? "ChronIQ")}</span>}
+                </div>
+              );
+            })}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const getGameGridCards = (game: Game) => {
+  const entries = [
+    ...game.players.flatMap((player) => player.timeline),
+    ...game.guessEntries,
+  ];
+  const uniqueEntries = new Map<string, GuessEntry>();
+  for (const entry of entries) {
+    uniqueEntries.set(entry.id, entry);
+  }
+  return [...uniqueEntries.values()];
+};
+
+const createGridMotionRows = (entries: GuessEntry[], rowCount: number) => {
+  const minimumItems = rowCount * 10;
+  const repeated = Array.from({ length: Math.max(entries.length, minimumItems) }, (_, index) => entries[index % entries.length]);
+  return Array.from({ length: rowCount }, (_, rowIndex) =>
+    repeated.filter((_, index) => index % rowCount === rowIndex),
+  );
+};
+
 export function HistoryPage() {
   const state = useAppState();
   const deleteHistoryEntry = (id: string) => {
@@ -2873,15 +3029,18 @@ export function HistoryDetailPage({ gameId }: { gameId: string }) {
       </section>
     );
   }
-
+  const game = createGameFromHistorySummary(summary);
   return (
-    <section className="panel history-result-panel">
-      <div className="section-heading">
-        <p>{new Date(summary.finishedAt).toLocaleString("de-DE")}</p>
-        <h1>{summary.name}</h1>
-      </div>
-      <FinishedGame game={createGameFromHistorySummary(summary)} />
-    </section>
+    <>
+      <CardGridMotionBackground game={game} />
+      <section className="panel history-result-panel">
+        <div className="section-heading">
+          <p>{new Date(summary.finishedAt).toLocaleString("de-DE")}</p>
+          <h1>{summary.name}</h1>
+        </div>
+        <FinishedGame game={game} />
+      </section>
+    </>
   );
 }
 
@@ -3097,6 +3256,7 @@ function AudioPresentation({ entry, compact = false }: { entry: GuessEntry; comp
 }
 
 function TimelineCard({
+  audioProgress,
   displaySelectors,
   entry,
   inserted = false,
@@ -3110,6 +3270,7 @@ function TimelineCard({
   animateReveal = false,
 }: {
   animateReveal?: boolean;
+  audioProgress?: number;
   displaySelectors?: GameSettings["displaySelectors"];
   entry: GuessEntry;
   inserted?: boolean;
@@ -3140,6 +3301,7 @@ function TimelineCard({
     >
       <PlayCard
         animateReveal={animateReveal}
+        audioProgress={audioProgress}
         displaySelectors={displaySelectors}
         entry={entry}
         mode={mode}

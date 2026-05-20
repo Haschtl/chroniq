@@ -783,6 +783,85 @@
 
 .finished-game-flow {
   gap: 18px;
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+.finished-game-flow > :not(.grid-motion-background) {
+  position: relative;
+  z-index: 1;
+}
+
+.grid-motion-background {
+  inset: 0;
+  /* opacity: 0.62; */
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+.grid-motion-shade {
+  background:
+    radial-gradient(circle at 50% 18%, transparent 0 18%, rgba(20, 20, 20, 0.16) 42%, rgba(20, 20, 20, 0.48) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 20%, transparent), color-mix(in srgb, var(--background) 72%, transparent));
+  inset: 0;
+  position: absolute;
+  z-index: 2;
+}
+
+.grid-motion-track {
+  display: grid;
+  gap: clamp(12px, 2.4vw, 24px);
+  left: 50%;
+  min-width: 160vw;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-9deg);
+}
+
+.grid-motion-row {
+  display: flex;
+  gap: clamp(12px, 2.4vw, 24px);
+  width: max-content;
+  will-change: transform;
+}
+
+.grid-motion-card {
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 56%),
+    color-mix(in srgb, var(--card) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(20, 20, 20, 0.18);
+  display: grid;
+  flex: 0 0 clamp(92px, 13vw, 176px);
+  overflow: hidden;
+  place-items: center;
+}
+
+.grid-motion-card img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.grid-motion-card span {
+  color: var(--muted);
+  font-size: clamp(0.72rem, 1.4vw, 0.95rem);
+  font-weight: 900;
+  max-width: 86%;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-result-panel {
+  position: relative;
+  z-index: 10;
 }
 
 .finished-podium {

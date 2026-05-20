@@ -254,6 +254,28 @@
     #1f1f1c;
 }
 
+.song-card-audio-progress {
+  background: rgba(255, 253, 250, 0.18);
+  bottom: 0;
+  height: 3px;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  transform: translateZ(38px);
+  z-index: 20;
+}
+
+.song-card-audio-progress span {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--song-orb-color, #1db954) 92%, white 8%), #fffdfa);
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  transition: transform 180ms linear;
+  width: 100%;
+}
+
 .song-card-info {
   align-content: end;
   background: linear-gradient(180deg, rgba(20, 20, 20, 0.02) 0%, rgba(20, 20, 20, 0.58) 46%, rgba(20, 20, 20, 0.9) 100%);
@@ -358,6 +380,11 @@
   overflow: hidden;
   place-items: center;
   position: relative;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease,
+    transform 220ms ease;
   width: min(116px, 42%);
 }
 
@@ -383,6 +410,9 @@
 
 .song-orb::after {
   background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.48), transparent 18%);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
 }
 
 .song-orb svg {
@@ -405,6 +435,29 @@
 .song-orb:disabled {
   cursor: default;
   opacity: 1;
+}
+
+.song-orb:not(:disabled):hover,
+.song-orb:not(:disabled):focus-visible {
+  border-color: rgba(255, 253, 250, 0.38);
+  box-shadow:
+    inset 0 -14px 30px rgba(0, 0, 0, 0.3),
+    inset 0 14px 28px rgba(255, 255, 255, 0.18),
+    0 0 50px color-mix(in srgb, var(--song-orb-color, #1db954) 70%, transparent),
+    0 20px 48px rgba(0, 0, 0, 0.38);
+  filter: saturate(1.12) brightness(1.06);
+  transform: scale(1.03);
+}
+
+.song-orb-overlay:not(:disabled):hover,
+.song-orb-overlay:not(:disabled):focus-visible {
+  transform: translate(-50%, -50%) scale(1.03);
+}
+
+.song-orb:not(:disabled):hover::after,
+.song-orb:not(:disabled):focus-visible::after {
+  opacity: 0.82;
+  transform: translate(4%, -3%) scale(1.08);
 }
 
 .song-orb.playing {
