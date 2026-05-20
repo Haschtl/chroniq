@@ -763,7 +763,7 @@ const normalizeSpotifyItem = (type: SpotifySeedType, item: Record<string, unknow
       totalTracks,
       imageUrl: getImageUrl(item),
       externalUrl,
-      strategy: "Playlist zufällig",
+      strategy: "Playlist random",
     };
   }
   return {

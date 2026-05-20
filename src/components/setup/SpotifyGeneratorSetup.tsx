@@ -28,6 +28,8 @@ import type {
   SpotifyExtraGuessKey,
   SpotifyOrderKey,
 } from "../../types";
+import { createTranslator } from "../../i18n";
+import { useAppState } from "../../store";
 
 const initialSpotifyCardCount = 40;
 
@@ -193,6 +195,8 @@ export function SpotifyGeneratorSetup({
   setup: ReturnType<typeof useSpotifySetup>;
   spotifyConnector?: DataConnector;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const syncedPreviewTypeRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -207,7 +211,7 @@ export function SpotifyGeneratorSetup({
     try {
       await startSpotifyAuthorization();
     } catch (error) {
-      setup.setLookupError(error instanceof Error ? error.message : "Spotify Verbindung konnte nicht gestartet werden.");
+      setup.setLookupError(error instanceof Error ? error.message : translate("settings.spotifyStartError"));
     }
   };
 
@@ -218,10 +222,10 @@ export function SpotifyGeneratorSetup({
   return (
     <div className="spotify-tools">
       <label className="field">
-        Spotify Seed
+        {translate("spotify.seedLabel")}
         <div className={spotifyConnector ? "spotify-seed-input" : "spotify-seed-input disabled"}>
           <button
-            aria-label={spotifyConnector ? "Spotify verbunden" : "Mit Spotify verbinden"}
+            aria-label={spotifyConnector ? translate("spotify.connectedAria") : translate("spotify.connectAria")}
             className="spotify-prefix-button"
             disabled={Boolean(spotifyConnector)}
             onClick={connectSpotifyFromSeed}
@@ -233,8 +237,8 @@ export function SpotifyGeneratorSetup({
             disabled={!spotifyConnector}
             placeholder={
               spotifyConnector
-                ? "Song, Playlist, Artist oder Spotify-Link suchen"
-                : "Spotify verbinden, um Seeds zu suchen"
+                ? translate("spotify.searchPlaceholder")
+                : translate("spotify.connectPlaceholder")
             }
             value={setup.query}
             onChange={(event) => {
@@ -272,7 +276,7 @@ export function SpotifyGeneratorSetup({
             </button>
           ))}
         </div>
-      ) : setup.lookupLoading ? <p className="muted">Suche läuft...</p> : null}
+      ) : setup.lookupLoading ? <p className="muted">{translate("spotify.searching")}</p> : null}
       <SpotifyAdvancedOptions
         canPreload={Boolean(spotifyConnector && setup.seed && !setup.exhausted)}
         exhausted={setup.exhausted}
@@ -333,6 +337,8 @@ function SpotifyAdvancedOptions({
   preloadedCount: number;
   preloadLoading: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const cardBackKeys = value.cardBackKeys?.length ? value.cardBackKeys : ["audioPreview" as SpotifyCardBackKey];
   const updateCardBackKey = (key: SpotifyCardBackKey, checked: boolean) => {
     const nextKeys = checked
@@ -370,7 +376,7 @@ function SpotifyAdvancedOptions({
       <Accordion.Item className="spotify-advanced-accordion" value="advanced">
         <Accordion.Header>
           <Accordion.Trigger className="spotify-advanced-trigger">
-            <span>Advanced</span>
+            <span>{translate("spotify.advanced")}</span>
             <small>
               {cardBackKeys.map((key) => spotifyCardKeyLabels[key]).join(" + ")}{" "}
               · {spotifyOrderLabels[value.orderKey]} ·{" "}
@@ -381,7 +387,7 @@ function SpotifyAdvancedOptions({
         </Accordion.Header>
         <Accordion.Content className="spotify-advanced-content">
           <div className="spotify-display-options" aria-label="Card-Back-Keys">
-            <span>Karten-Rückseite</span>
+            <span>{translate("spotify.cardBack")}</span>
             <div>
               {spotifyCardBackOptions.map((option) => (
                 <label
@@ -413,7 +419,7 @@ function SpotifyAdvancedOptions({
               style={{ padding: 0, borderTopWidth: 0 }}
               aria-label="Card-Back-Keys"
             >
-              <span>Sortieren nach</span>
+              <span>{translate("spotify.orderBy")}</span>
             </div>
             <label className="field">
               <select
@@ -437,7 +443,7 @@ function SpotifyAdvancedOptions({
             className="spotify-display-options"
             aria-label="Extra-Guess-Keys"
           >
-            <span>Daten raten</span>
+            <span>{translate("spotify.extraGuess")}</span>
             <div>
               {spotifyExtraGuessOptions.map((option) => (
                 <label
@@ -464,7 +470,7 @@ function SpotifyAdvancedOptions({
             </div>
           </div>
           <div className="spotify-display-options" aria-label="Card-Front-Keys">
-            <span>Karten-Vorderseite</span>
+            <span>{translate("spotify.cardFront")}</span>
             <div>
               {spotifyCardFrontOptions.map((option) => (
                 <label
@@ -492,7 +498,7 @@ function SpotifyAdvancedOptions({
           </div>
           <div className="spotify-preload-row">
             <span>
-              {preloadedCount} Karten vorgeladen{exhausted ? " · Quelle ausgeschöpft" : ""}
+              {translate("spotify.preloadedCards", { count: preloadedCount })}{exhausted ? ` · ${translate("spotify.sourceExhausted")}` : ""}
             </span>
             <button
               className="secondary-button"
@@ -501,7 +507,7 @@ function SpotifyAdvancedOptions({
               onClick={onPreload}
             >
               <Download size={15} />
-              {preloadLoading ? "Lädt..." : "Batch nachladen"}
+              {preloadLoading ? translate("setup.loading") : translate("spotify.loadBatch")}
             </button>
           </div>
         </Accordion.Content>

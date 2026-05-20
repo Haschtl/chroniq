@@ -178,7 +178,7 @@ export interface RoundResult {
   correctionClaims?: RoundCorrectionClaim[];
   extraGuessesCorrect?: boolean;
   extraPointAwardedPlayerId?: string;
-  message: string;
+  message?: string;
 }
 
 export interface RoundCorrectionClaim {

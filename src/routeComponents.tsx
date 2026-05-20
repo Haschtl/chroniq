@@ -79,6 +79,7 @@ import {
 import { getLineWaveTheme } from "./lib/theme";
 import { isExtraGuessCorrect } from "./lib/textMatch";
 import { SpotifyGeneratorSetup, useSpotifySetup } from "./components/setup/SpotifyGeneratorSetup";
+import { createTranslator, type TranslationKey } from "./i18n";
 import type {
   Game,
   GameSettings,
@@ -90,6 +91,7 @@ import type {
   NewGamePlayerInput,
   Player,
   RoundCorrectionClaim,
+  RoundResult,
   StopCondition,
   CustomSetupState,
 } from "./types";
@@ -98,7 +100,7 @@ const LineWaves = lazy(() => import("./LineWaves"));
 
 const customExampleDatasets: {
   key: string;
-  label: string;
+  labelKey: TranslationKey;
   path: string;
   mapping: CustomSetupState["mapping"];
   orderLabel: string;
@@ -108,7 +110,7 @@ const customExampleDatasets: {
 }[] = [
   {
     key: "autoquartett",
-    label: "KFZ / Autoquartett",
+    labelKey: "setup.example.autoquartett",
     path: "data/autoquartett.wikidata.json",
     mapping: {
       title: "model",
@@ -124,7 +126,7 @@ const customExampleDatasets: {
   },
   {
     key: "artworks",
-    label: "Berühmte Kunstwerke",
+    labelKey: "setup.example.artworks",
     path: "data/artworks.wikidata.json",
     mapping: {
       title: "title",
@@ -362,8 +364,9 @@ function FooterMenu({
 export function HomePage() {
   const navigate = useNavigate();
   const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const savedSetup = state.setup;
-  const defaultGameName = createDefaultGameName(state.history.length + 1);
+  const defaultGameName = createDefaultGameName(state.history.length + 1, state.preferences.language, translate);
   const [gameName, setGameName] = useState(savedSetup?.gameName || defaultGameName);
   const [players, setPlayers] = useState<NewGamePlayerInput[]>(
     savedSetup?.players?.length ? savedSetup.players : createDefaultSetupPlayers(),
@@ -524,7 +527,7 @@ export function HomePage() {
           setCustomLoadError("");
           return buildCustomEntries(next);
         } catch (error) {
-          setCustomLoadError(error instanceof Error ? error.message : "Daten konnten nicht gelesen werden.");
+          setCustomLoadError(error instanceof Error ? error.message : translate("setup.readDataError"));
           return { ...next, columns: [], entries: [] };
         }
       }
@@ -538,11 +541,11 @@ export function HomePage() {
     setCustomLoadError("");
     try {
       const response = await fetch(customSetup.sourceUrl.trim());
-      if (!response.ok) throw new Error(`Datei konnte nicht geladen werden (${response.status}).`);
+      if (!response.ok) throw new Error(`${translate("setup.fileLoadError")} (${response.status}).`);
       updateCustomSetup({ rawText: await response.text() });
       setCustomUrlDialogOpen(false);
     } catch (error) {
-      setCustomLoadError(error instanceof Error ? error.message : "Datei konnte nicht geladen werden.");
+      setCustomLoadError(error instanceof Error ? error.message : translate("setup.fileLoadError"));
     } finally {
       setCustomUrlLoading(false);
     }
@@ -554,7 +557,7 @@ export function HomePage() {
     file
       .text()
       .then((rawText) => updateCustomSetup({ rawText, sourceUrl: file.name }))
-      .catch(() => setCustomLoadError("Datei konnte nicht gelesen werden."));
+      .catch(() => setCustomLoadError(translate("setup.fileReadError")));
   };
 
   const loadCustomClipboard = async () => {
@@ -562,12 +565,12 @@ export function HomePage() {
     try {
       const rawText = await navigator.clipboard.readText();
       if (!rawText.trim()) {
-        setCustomLoadError("Zwischenablage ist leer.");
+        setCustomLoadError(translate("setup.clipboardEmpty"));
         return;
       }
-      updateCustomSetup({ rawText, sourceUrl: "Zwischenablage" });
+      updateCustomSetup({ rawText, sourceUrl: translate("setup.fromClipboard") });
     } catch {
-      setCustomLoadError("Zwischenablage konnte nicht gelesen werden.");
+      setCustomLoadError(translate("setup.clipboardReadError"));
     }
   };
 
@@ -578,11 +581,11 @@ export function HomePage() {
     setCustomLoadError("");
     try {
       const response = await fetch(`${import.meta.env.BASE_URL}${example.path}`);
-      if (!response.ok) throw new Error(`Beispieldaten konnten nicht geladen werden (${response.status}).`);
+      if (!response.ok) throw new Error(`${translate("setup.exampleLoadError")} (${response.status}).`);
       const rawText = await response.text();
       updateCustomSetup({
         rawText,
-        sourceUrl: example.label,
+        sourceUrl: translate(example.labelKey),
         format: "json",
         delimiter: "auto",
         hasHeader: true,
@@ -593,7 +596,7 @@ export function HomePage() {
         extraGuessKeys: example.extraGuessKeys,
       });
     } catch (error) {
-      setCustomLoadError(error instanceof Error ? error.message : "Beispieldaten konnten nicht geladen werden.");
+      setCustomLoadError(error instanceof Error ? error.message : translate("setup.exampleLoadError"));
     } finally {
       setCustomExampleLoading(false);
     }
@@ -640,7 +643,7 @@ export function HomePage() {
       setState((current) => ({ ...current, activeGame }));
       navigate({ to: "/game" });
     } catch (error) {
-      spotifySetup.setLookupError(error instanceof Error ? error.message : "Spotify Karten konnten nicht geladen werden.");
+      spotifySetup.setLookupError(error instanceof Error ? error.message : translate("setup.spotifyCardsLoadError"));
     } finally {
       setGameStartLoading(false);
     }
@@ -660,8 +663,8 @@ export function HomePage() {
 
         <section className="setup-section">
           <div className="section-heading compact">
-            <p>Teams</p>
-            <h2>Wer tritt an?</h2>
+            <p>{translate("setup.teamsEyebrow")}</p>
+            <h2>{translate("setup.teamsTitle")}</h2>
           </div>
           <div className="player-editor">
             {normalizedPlayers.map((player, index) => (
@@ -673,7 +676,7 @@ export function HomePage() {
                 }
               >
                 <div className="player-card-top">
-                  <span>Team {index + 1}</span>
+                  <span>{translate("setup.teamLabel", { number: index + 1 })}</span>
                   <button
                     type="button"
                     disabled={normalizedPlayers.length <= 2}
@@ -685,7 +688,7 @@ export function HomePage() {
                 <TeamAvatar color={player.color} name={player.name} />
                 <div className="player-card-controls">
                   <input
-                    aria-label={`Name Team ${index + 1}`}
+                    aria-label={translate("setup.teamNameLabel", { number: index + 1 })}
                     maxLength={12}
                     value={player.name}
                     onChange={(event) =>
@@ -695,7 +698,7 @@ export function HomePage() {
                     }
                   />
                   <input
-                    aria-label={`Farbe Team ${index + 1}`}
+                    aria-label={translate("setup.teamColorLabel", { number: index + 1 })}
                     className="player-color-input"
                     type="color"
                     value={player.color}
@@ -719,8 +722,8 @@ export function HomePage() {
 
         <section className="setup-section">
           <div className="section-heading compact">
-            <p>Spieltyp</p>
-            <h2>Modus und Quelle</h2>
+            <p>{translate("setup.modeEyebrow")}</p>
+            <h2>{translate("setup.modeTitle")}</h2>
           </div>
           <ModeSelect value={mode} onValueChange={setMode} />
 
@@ -747,14 +750,14 @@ export function HomePage() {
                   onChange={(event) => loadCustomFile(event.target.files?.[0])}
                 />
                 <div>
-                  <strong>{customSetup.rawText ? customSetup.sourceUrl || "Lokale Datei" : "Datei hier ablegen"}</strong>
-                  <span>CSV, TSV, Text oder JSON-Liste</span>
+                  <strong>{customSetup.rawText ? customSetup.sourceUrl || translate("setup.localFile") : translate("setup.dropFile")}</strong>
+                  <span>{translate("setup.fileTypes")}</span>
                 </div>
                 <label className="secondary-button" htmlFor="custom-file-input">
-                  Lokal öffnen
+                  {translate("setup.openLocal")}
                 </label>
                 <button className="secondary-button" type="button" onClick={loadCustomClipboard}>
-                  Aus Zwischenablage
+                  {translate("setup.fromClipboard")}
                 </button>
                 <button className="ghost-button" type="button" onClick={() => setCustomUrlDialogOpen(true)}>
                   <LinkIcon size={15} />
@@ -763,12 +766,12 @@ export function HomePage() {
               </div>
               <div className="custom-example-row">
                 <label className="field">
-                  Beispiel-Daten
+                  {translate("setup.exampleData")}
                   <select value={customExampleKey} onChange={(event) => setCustomExampleKey(event.target.value)}>
-                    <option value="">Auswählen</option>
+                    <option value="">{translate("setup.select")}</option>
                     {customExampleDatasets.map((dataset) => (
                       <option key={dataset.key} value={dataset.key}>
-                        {dataset.label}
+                        {translate(dataset.labelKey)}
                       </option>
                     ))}
                   </select>
@@ -779,15 +782,15 @@ export function HomePage() {
                   disabled={!customExampleKey || customExampleLoading}
                   onClick={loadCustomExample}
                 >
-                  {customExampleLoading ? "Lädt..." : "Beispiel laden"}
+                  {customExampleLoading ? translate("setup.loading") : translate("setup.loadExample")}
                 </button>
               </div>
               <Dialog.Root open={customUrlDialogOpen} onOpenChange={setCustomUrlDialogOpen}>
                 <Dialog.Overlay className="dialog-overlay" />
                 <Dialog.Content className="dialog-content custom-url-dialog">
                   <div className="dialog-header">
-                    <Dialog.Title>Remote-Datei laden</Dialog.Title>
-                    <Dialog.Description>CSV, TSV oder JSON von einer URL herunterladen.</Dialog.Description>
+                    <Dialog.Title>{translate("setup.remoteFileTitle")}</Dialog.Title>
+                    <Dialog.Description>{translate("setup.remoteFileDescription")}</Dialog.Description>
                   </div>
                   <label className="field">
                     URL
@@ -799,7 +802,7 @@ export function HomePage() {
                   </label>
                   <div className="dialog-actions">
                     <button className="secondary-button" type="button" onClick={() => setCustomUrlDialogOpen(false)}>
-                      Abbrechen
+                      {translate("setup.cancel")}
                     </button>
                     <button
                       className="primary-button"
@@ -808,7 +811,7 @@ export function HomePage() {
                       disabled={customUrlLoading || !customSetup.sourceUrl.trim()}
                     >
                       <LinkIcon size={15} />
-                      {customUrlLoading ? "Lädt..." : "Laden"}
+                      {customUrlLoading ? translate("setup.loading") : translate("setup.load")}
                     </button>
                   </div>
                 </Dialog.Content>
@@ -818,7 +821,7 @@ export function HomePage() {
               ) : null}
               <div className="custom-options-grid">
                 <label className="field">
-                  Format
+                  {translate("setup.format")}
                   <select
                     value={customSetup.format}
                     onChange={(event) =>
@@ -826,12 +829,12 @@ export function HomePage() {
                     }
                   >
                     <option value="auto">Auto</option>
-                    <option value="csv">CSV / Tabelle</option>
-                    <option value="json">JSON-Liste</option>
+                    <option value="csv">{translate("setup.csvTable")}</option>
+                    <option value="json">{translate("setup.jsonList")}</option>
                   </select>
                 </label>
                 <label className="field">
-                  Trennzeichen
+                  {translate("setup.delimiter")}
                   <select
                     disabled={customSetup.format === "json"}
                     value={customSetup.delimiter}
@@ -840,9 +843,9 @@ export function HomePage() {
                     }
                   >
                     <option value="auto">Auto</option>
-                    <option value=",">Komma</option>
-                    <option value=";">Semikolon</option>
-                    <option value="\t">Tab</option>
+                    <option value=",">{translate("setup.comma")}</option>
+                    <option value=";">{translate("setup.semicolon")}</option>
+                    <option value="\t">{translate("setup.tab")}</option>
                   </select>
                 </label>
                 <label className="check-field">
@@ -854,37 +857,37 @@ export function HomePage() {
                       updateCustomSetup({ hasHeader: event.target.checked })
                     }
                   />
-                  Erste Zeile ist Header
+                  {translate("setup.firstRowHeader")}
                 </label>
               </div>
               {customSetup.columns.length > 0 ? (
                 <div className="custom-mapping-panel">
                   <div className="custom-mapping-grid">
-                    <CustomColumnSelect customSetup={customSetup} field="title" label="Titel / Name" onChange={updateCustomSetup} />
-                    <CustomColumnSelect customSetup={customSetup} field="artist" label="Artist / Zusatzguess" onChange={updateCustomSetup} />
-                    <CustomColumnSelect customSetup={customSetup} field="order" label="Sortierwert" onChange={updateCustomSetup} required />
-                    <CustomColumnSelect customSetup={customSetup} field="image" label="Bild-URL" onChange={updateCustomSetup} />
-                    <CustomColumnSelect customSetup={customSetup} field="audio" label="Audio-URL" onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="title" label={translate("setup.titleName")} onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="artist" label={translate("setup.artistExtraGuess")} onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="order" label={translate("setup.orderValue")} onChange={updateCustomSetup} required />
+                    <CustomColumnSelect customSetup={customSetup} field="image" label={translate("setup.imageUrl")} onChange={updateCustomSetup} />
+                    <CustomColumnSelect customSetup={customSetup} field="audio" label={translate("setup.audioUrl")} onChange={updateCustomSetup} />
                     <label className="field">
-                      Label Sortierwert
+                      {translate("setup.orderValueLabel")}
                       <input value={customSetup.orderLabel} onChange={(event) => updateCustomSetup({ orderLabel: event.target.value })} />
                     </label>
                   </div>
                   <CustomKeySelect
                     customSetup={customSetup}
-                    label="Karten-Rückseite"
+                    label={translate("setup.cardBack")}
                     value={customSetup.cardBackKeys}
                     onChange={(cardBackKeys) => updateCustomSetup({ cardBackKeys })}
                   />
                   <CustomKeySelect
                     customSetup={customSetup}
-                    label="Daten raten"
+                    label={translate("setup.extraGuessData")}
                     value={customSetup.extraGuessKeys}
                     onChange={(extraGuessKeys) => updateCustomSetup({ extraGuessKeys })}
                   />
                   <CustomKeySelect
                     customSetup={customSetup}
-                    label="Karten-Vorderseite"
+                    label={translate("setup.cardFront")}
                     value={customSetup.cardFrontKeys}
                     onChange={(cardFrontKeys) => updateCustomSetup({ cardFrontKeys })}
                   />
@@ -892,19 +895,19 @@ export function HomePage() {
               ) : null}
               {customSetup.rawText ? (
                 <p className="muted">
-                  {customSetup.entries.length} Karten aus {customParsedSummary?.rowCount ?? 0} Einträgen erzeugt.
+                  {translate("setup.generatedCards", { cards: customSetup.entries.length, rows: customParsedSummary?.rowCount ?? 0 })}
                 </p>
               ) : null}
             </div>
           ) : null}
           {mode === "replay" ? (
             <label className="field">
-              Historie
+              {translate("setup.history")}
               <select
                 value={replayHistoryId}
                 onChange={(event) => setReplayHistoryId(event.target.value)}
               >
-                <option value="">Replay auswählen</option>
+                <option value="">{translate("setup.selectReplay")}</option>
                 {state.history
                   .filter((entry) => (entry.replayEntries?.length ?? 0) > 0)
                   .map((entry) => (
@@ -929,9 +932,9 @@ export function HomePage() {
               <Accordion.Header>
                 <Accordion.Trigger className="setup-accordion-trigger">
                   <span>
-                    <b>Einstellungen</b>
+                    <b>{translate("setup.settings")}</b>
                     <small>
-                      {getStopConditionSummary(stopType, stopValue)}
+                      {getStopConditionSummary(stopType, stopValue, translate)}
                     </small>
                   </span>
                   <span aria-hidden="true">⌄</span>
@@ -940,7 +943,7 @@ export function HomePage() {
               <Accordion.Content className="setup-accordion-content">
                 <div className="stop-config">
                 <label className="field compact-field">
-                  Karten zur Auswahl
+                  {translate("setup.cardsToChoose")}
                   <input
                     type="number"
                     min={1}
@@ -952,14 +955,13 @@ export function HomePage() {
                       )
                     }
                   />
-                  {/* <small>{normalizeCardChoiceCount(cardChoiceCount) === 1 ? "Auswahl wird übersprungen." : "Pro Runde im ersten Schritt sichtbar."}</small> */}
                 </label>
                 </div>
                 <div className="stop-config">
                   <div
                     className="mode-grid"
                     role="radiogroup"
-                    aria-label="Spielende"
+                    aria-label={translate("setup.gameEnd")}
                   >
                     {stopConditionOptions.map((option) => (
                       <button
@@ -975,17 +977,17 @@ export function HomePage() {
                           setStopValue(option.defaultValue);
                         }}
                       >
-                        <strong>{option.label}</strong>
-                        <span>{option.description}</span>
+                        <strong>{translate(option.labelKey)}</strong>
+                        <span>{translate(option.descriptionKey)}</span>
                       </button>
                     ))}
                   </div>
                   <label className="field">
-                    {
+                    {translate(
                       stopConditionOptions.find(
                         (option) => option.type === stopType,
-                      )?.valueLabel
-                    }
+                      )?.valueLabelKey ?? "stop.maxPoints.valueLabel",
+                    )}
                     <input
                       type="number"
                       min={1}
@@ -1014,8 +1016,8 @@ export function HomePage() {
             >
               <Accordion.Header>
                 <Accordion.Trigger className="connector-accordion-trigger">
-                  <span>{configuredConnectorCount} Konnektoren</span>
-                  {requiredConnectorMissing ? <b>Spotify fehlt</b> : <b>OK</b>}
+                  <span>{translate("setup.connectors", { count: configuredConnectorCount })}</span>
+                  {requiredConnectorMissing ? <b>{translate("setup.spotifyMissing")}</b> : <b>{translate("setup.ok")}</b>}
                 </Accordion.Trigger>
               </Accordion.Header>
               <Accordion.Content className="connector-accordion-content">
@@ -1023,12 +1025,12 @@ export function HomePage() {
                   <div className="connector-summary-row">
                     <span>Spotify</span>
                     <b className={spotifyConnector ? "ok" : "missing"}>
-                      {spotifyConnector ? "verbunden" : "fehlt"}
+                      {spotifyConnector ? translate("setup.connected") : translate("setup.missing")}
                     </b>
                   </div>
                   <Link className="secondary-button" to="/settings">
                     <Settings size={15} />
-                    Settings öffnen
+                    {translate("setup.openSettings")}
                   </Link>
                 </div>
               </Accordion.Content>
@@ -1036,17 +1038,17 @@ export function HomePage() {
           </Accordion.Root>
 
           {requiredSeedMissing ? (
-            <p className="form-error">Spotify Seed aus der Suche auswählen.</p>
+            <p className="form-error">{translate("setup.spotifySeedMissing")}</p>
           ) : null}
           {autoquartettLoadError ? (
             <p className="form-error">{autoquartettLoadError}</p>
           ) : null}
           {requiredReplayMissing ? (
-            <p className="form-error">Replay aus der Historie auswählen.</p>
+            <p className="form-error">{translate("setup.replayMissing")}</p>
           ) : null}
           {requiredCustomMissing ? (
             <p className="form-error">
-              Custom-Datei laden und Mapping auswählen.
+              {translate("setup.customMissing")}
             </p>
           ) : null}
           <button
@@ -1062,8 +1064,8 @@ export function HomePage() {
           >
             <Play size={16} fill="currentColor" />
             {gameStartLoading
-              ? "Karten laden..."
-              : `Spiel starten (${availableCardsLabel})`}
+              ? translate("setup.loadingCards")
+              : translate("setup.startGame", { count: availableCardsLabel })}
           </button>
         </section>
       </form>
@@ -1073,6 +1075,7 @@ export function HomePage() {
 
 export function GamePage() {
   const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const navigate = useNavigate();
   const spotifyConnector = getConfiguredSpotifyConnector(state);
   const [entryLoadError, setEntryLoadError] = useState("");
@@ -1117,7 +1120,7 @@ export function GamePage() {
       })
       .catch((error) => {
         if (!cancelled) {
-          setEntryLoadError(error instanceof Error ? error.message : "Karten konnten nicht nachgeladen werden.");
+          setEntryLoadError(error instanceof Error ? error.message : translate("game.reloadCardsError"));
         }
       })
       .finally(() => {
@@ -1220,10 +1223,10 @@ export function GamePage() {
   if (!state.activeGame) {
     return (
       <section className="empty-state">
-        <h1>Kein aktives Spiel</h1>
-        <p>Starte ein neues Spiel im Setup. Der Spielstand wird danach automatisch lokal gespeichert.</p>
+        <h1>{translate("game.noActiveTitle")}</h1>
+        <p>{translate("game.noActiveText")}</p>
         <Link className="primary-button" to="/">
-          Zum Setup
+          {translate("game.toSetup")}
         </Link>
       </section>
     );
@@ -1258,7 +1261,7 @@ export function GamePage() {
     try {
       await startSpotifyAuthorization();
     } catch (error) {
-      setConnectorError(error instanceof Error ? error.message : "Spotify Verbindung konnte nicht gestartet werden.");
+      setConnectorError(error instanceof Error ? error.message : translate("settings.spotifyStartError"));
       setConnectorConnecting(false);
     }
   };
@@ -1300,7 +1303,7 @@ export function GamePage() {
           <div>
             <p>
               {game.phase === "finished"
-                ? `${game.roundNumber} Runden`
+                ? translate("game.rounds", { count: game.roundNumber })
                 : `Runde ${game.roundNumber}`}
             </p>
             <h1
@@ -1310,7 +1313,7 @@ export function GamePage() {
               }}
             >
               {game.phase === "finished"
-                ? "Spiel beendet"
+                ? translate("game.finished")
                 : `${activePlayer.name} ist dran`}
             </h1>
           </div>
@@ -1401,6 +1404,8 @@ function CustomColumnSelect({
   onChange: (patch: Partial<CustomSetupState>) => void;
   required?: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   return (
     <label className="field">
       {label}
@@ -1415,7 +1420,7 @@ function CustomColumnSelect({
           })
         }
       >
-        <option value="">{required ? "Spalte auswählen" : "Nicht verwenden"}</option>
+        <option value="">{required ? translate("setup.selectColumn") : translate("setup.doNotUse")}</option>
         {customSetup.columns.map((column) => (
           <option key={column} value={column}>
             {column}
@@ -1448,6 +1453,8 @@ function RequiredConnectorDialog({
   missing: boolean;
   onReconnect: () => void;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const spotifyClientConfigured = hasSpotifyClientId();
   const unsupportedDevOrigin = isUnsupportedSpotifyDevOrigin();
 
@@ -1462,29 +1469,27 @@ function RequiredConnectorDialog({
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div className="dialog-header">
-            <Dialog.Title>Spotify erneut verbinden</Dialog.Title>
+            <Dialog.Title>{translate("game.connectorDialogTitle")}</Dialog.Title>
             <Dialog.Description>
-              Dieses aktive Spiel braucht Spotify. Verbinde den Connector erneut, damit Playback und Nachladen weiter funktionieren.
+              {translate("game.connectorDialogDescription")}
             </Dialog.Description>
           </div>
           {!spotifyClientConfigured ? (
-            <p className="form-error">Spotify App-Konfiguration fehlt. Setze VITE_SPOTIFY_CLIENT_ID in .env.local.</p>
+            <p className="form-error">{translate("game.spotifyConfigMissing")}</p>
           ) : null}
           {unsupportedDevOrigin ? (
-            <p className="form-error">
-              Spotify akzeptiert localhost nicht. Öffne die App ueber 127.0.0.1 und trage dieselbe Redirect URI im Spotify Dashboard ein.
-            </p>
+            <p className="form-error">{translate("game.localhostUnsupported")}</p>
           ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <div className="dialog-actions">
             {unsupportedDevOrigin ? (
               <a className="secondary-button" href={getSpotifySafeDevUrl()}>
-                Mit 127.0.0.1 öffnen
+                {translate("game.openLoopback")}
               </a>
             ) : null}
             <button className="primary-button" type="button" disabled={!spotifyClientConfigured || connecting} onClick={onReconnect}>
               <SpotifyIcon />
-              {connecting ? "Verbinde..." : "Spotify verbinden"}
+              {connecting ? translate("settings.connecting") : translate("settings.connectSpotify")}
             </button>
           </div>
         </Dialog.Content>
@@ -1494,12 +1499,14 @@ function RequiredConnectorDialog({
 }
 
 function FooterScores({ game }: { game: Game }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const target = getProgressTarget(game);
 
   return (
     <aside
       className="footer-scores"
-      aria-label="Spielstand"
+      aria-label={translate("game.scoreboard")}
       style={{ "--player-count": game.players.length } as React.CSSProperties}
     >
       {game.players.map((player) => (
@@ -1510,6 +1517,8 @@ function FooterScores({ game }: { game: Game }) {
 }
 
 function PlayerScoreChip({ player, target }: { player: Player; target: number }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const progress = Math.min(1, Math.max(0, player.points / target));
 
   return (
@@ -1528,7 +1537,7 @@ function PlayerScoreChip({ player, target }: { player: Player; target: number })
         >
           <img alt="" className="score-chip-avatar" src={getTeamIconDataUri(player.name, player.color)} />
           <span className="score-chip-value">{player.points}</span>
-          <span className="score-chip-dots" aria-label={`${player.extraPoints} Korrekturpunkte`}>
+          <span className="score-chip-dots" aria-label={translate("game.correctionPoints", { count: player.extraPoints })}>
             {Array.from({ length: player.extraPoints }, (_, index) => (
               <i
                 className="score-chip-dot active"
@@ -1542,10 +1551,10 @@ function PlayerScoreChip({ player, target }: { player: Player; target: number })
       <DropdownMenu.Content align="start" className="player-dropdown" collisionPadding={12} side="top" sideOffset={18}>
           <div className="player-dropdown-header">
             <strong>{player.name}</strong>
-            <span>{player.points} Punkte</span>
+            <span>{translate("game.points", { count: player.points })}</span>
           </div>
           {player.timeline.length === 0 ? (
-            <p className="dropdown-empty">Noch keine Karten.</p>
+            <p className="dropdown-empty">{translate("game.noCardsYet")}</p>
           ) : (
             <div className="timeline-list">
               {player.timeline.map((entry) => (
@@ -1582,6 +1591,8 @@ function PickCard({
   loading?: boolean;
   onPick: (entryId: string) => void;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const availableEntries = getAvailableEntries(game);
   const activePlayer = getActivePlayer(game);
   const songCards = isAudioCardMode(game.settings.mode);
@@ -1596,7 +1607,7 @@ function PickCard({
 
   return (
     <div className="flow pick-flow">
-      {loading ? <p className="muted">Karten werden nachgeladen...</p> : null}
+      {loading ? <p className="muted">{translate("game.loadingMoreCards")}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <div className="round-card-stage">
         <div className={selectedEntryId ? "card-backs selecting" : "card-backs"}>
@@ -1664,7 +1675,7 @@ function PickCard({
         </div>
       </div>
       <TimelinePreview game={game} player={activePlayer} />
-      {availableEntries.length === 0 && !loading ? <p className="muted">Keine Karten im Pool.</p> : null}
+      {availableEntries.length === 0 && !loading ? <p className="muted">{translate("game.noCardsInPool")}</p> : null}
     </div>
   );
 }
@@ -1680,13 +1691,15 @@ function PresentCard({
   onPick: (entryId: string) => void;
   onContinue: () => void;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const availableEntries = getAvailableEntries(game);
   useFooterActions(
     entry
       ? [
           {
             key: "continue-sort",
-            label: "Einsortieren",
+            label: translate("game.continueSort"),
             icon: <Play size={16} fill="currentColor" />,
             variant: "primary",
             onClick: onContinue,
@@ -1776,6 +1789,8 @@ function SortAndGuess({
   paused: boolean;
   onSubmit: (index: number, values: Record<string, string>) => void;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const key = game.settings.orderSelector.key;
   const [proposedIndex, setProposedIndex] = useState<number | undefined>();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -1823,13 +1838,13 @@ function SortAndGuess({
             ) : (
               <div className="extra-guess-stage-panel">
                 <div className="dialog-header">
-                  <h2>Daten raten</h2>
+                  <h2>{translate("game.guessData")}</h2>
                 </div>
                 {game.settings.extraGuessSelectors.length > 0 ? (
                   <div className="extra-guess-grid">
                     {game.settings.extraGuessSelectors.map((selector) => (
                       <label className="field" key={selector.key}>
-                        {selector.label}
+                        {getEntryFieldLabel(selector.key, selector.label, translate)}
                         <input
                           value={values[selector.key] ?? ""}
                           onChange={(event) => setValues((current) => ({ ...current, [selector.key]: event.target.value }))}
@@ -1838,7 +1853,7 @@ function SortAndGuess({
                     ))}
                   </div>
                 ) : (
-                  <p className="muted">Keine Extra-Guesses für diesen Modus.</p>
+                  <p className="muted">{translate("game.noExtraGuesses")}</p>
                 )}
                 <div className="dialog-actions">
                   <HoldToConfirmButton disabled={proposedIndex === undefined} onConfirm={submitGuess} />
@@ -1880,6 +1895,8 @@ function SortAndGuess({
 }
 
 function HoldToConfirmButton({ disabled = false, onConfirm }: { disabled?: boolean; onConfirm: () => void }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const [holdState, setHoldState] = useState<"idle" | "holding" | "releasing">("idle");
   const timeoutRef = useRef<number | undefined>(undefined);
   const releaseTimeoutRef = useRef<number | undefined>(undefined);
@@ -1932,7 +1949,7 @@ function HoldToConfirmButton({ disabled = false, onConfirm }: { disabled?: boole
 
   return (
     <button
-      aria-label="Guess einloggen, eine Sekunde gedrückt halten"
+      aria-label={translate("game.logGuessAria")}
       className={`primary-button hold-button ${holdState}`}
       disabled={disabled}
       onKeyDown={(event) => {
@@ -1959,7 +1976,7 @@ function HoldToConfirmButton({ disabled = false, onConfirm }: { disabled?: boole
       type="button"
     >
       <Check size={16} />
-      <span>einloggen</span>
+      <span>{translate("game.logGuess")}</span>
     </button>
   );
 }
@@ -2189,6 +2206,8 @@ function PlayCard({
   showGuesses?: boolean;
   showOrderValue?: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const frontSelectors = normalizeCardSelectors(displaySelectors, entry, orderKey, showOrderValue);
   const backSelectors = normalizeCardSelectors(presentationSelectors, entry, orderKey, false);
   const frontKeys = new Set(frontSelectors.map((selector) => selector.key));
@@ -2260,7 +2279,7 @@ function PlayCard({
         <button
           className="image-preview-trigger"
           type="button"
-          aria-label="Bild groß anzeigen"
+          aria-label={translate("game.imageZoomAria")}
           onClick={(event) => {
             event.stopPropagation();
             setImageDialogOpen(true);
@@ -2297,6 +2316,8 @@ function ImagePreviewDialog({
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const stopDialogPointer = (event: React.PointerEvent | React.MouseEvent) => {
     event.stopPropagation();
     if ("nativeEvent" in event && "stopImmediatePropagation" in event.nativeEvent) {
@@ -2325,10 +2346,10 @@ function ImagePreviewDialog({
           onPointerDown={stopDialogPointer}
           onPointerUp={stopDialogPointer}
         >
-          <Dialog.Title className="sr-only">Bildvorschau</Dialog.Title>
+          <Dialog.Title className="sr-only">{translate("game.imagePreview")}</Dialog.Title>
           <Dialog.Close
             className="image-preview-close"
-            aria-label="Bildvorschau schließen"
+            aria-label={translate("game.closeImagePreview")}
             onClick={(event) => {
               stopDialogPointer(event);
               onOpenChange(false);
@@ -2356,6 +2377,8 @@ function AudioOrb({
   overlay?: boolean;
   paused: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const className = [paused ? "song-orb" : "song-orb playing", overlay ? "song-orb-overlay" : ""].filter(Boolean).join(" ");
 
   if (!enabled) {
@@ -2369,7 +2392,7 @@ function AudioOrb({
     <button
       className={className}
       type="button"
-      aria-label={paused ? "Audio abspielen" : "Audio pausieren"}
+      aria-label={paused ? translate("game.audioPlay") : translate("game.audioPause")}
       onClick={
         onTogglePause
           ? (event) => {
@@ -2436,6 +2459,8 @@ function ExtraGuesses({
   game: Game;
   onSubmit: (values: Record<string, string>) => void;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const [values, setValues] = useState<Record<string, string>>({});
 
   const submit = (event: FormEvent) => {
@@ -2445,7 +2470,7 @@ function ExtraGuesses({
   useFooterActions([
     {
       key: "submit-extra-guesses",
-      label: "Guess einloggen",
+      label: translate("game.logGuess"),
       icon: <Check size={16} />,
       variant: "primary",
       onClick: () => onSubmit(values),
@@ -2456,7 +2481,7 @@ function ExtraGuesses({
     <form className="flow" onSubmit={submit}>
       {game.settings.extraGuessSelectors.map((selector) => (
         <label className="field" key={selector.key}>
-          {selector.label}
+          {getEntryFieldLabel(selector.key, selector.label, translate)}
           <input
             value={values[selector.key] ?? ""}
             onChange={(event) => setValues((current) => ({ ...current, [selector.key]: event.target.value }))}
@@ -2480,6 +2505,8 @@ function Challenge({
   onTogglePause: () => void;
   paused: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const activePlayer = getActivePlayer(game);
   const activeEntry = getActiveEntry(game);
   const proposedIndex = game.activeRound?.proposedIndex;
@@ -2504,8 +2531,8 @@ function Challenge({
       <div className="round-card-stage">
         <div className="challenge-top">
           <div>
-            <p>Korrektur</p>
-            <h2>Korrekturen anmelden</h2>
+            <p>{translate("game.challengeEyebrow")}</p>
+            <h2>{translate("game.challengeTitle")}</h2>
           </div>
           <button
             className="primary-button"
@@ -2513,7 +2540,7 @@ function Challenge({
             onClick={() => onResolve(claims)}
           >
             {claims.length > 0 ? <RotateCcw size={16} /> : <Check size={16} />}
-            {claims.length > 0 ? "Korrekturen prüfen" : "Keine Korrektur"}
+            {claims.length > 0 ? translate("game.reviewCorrections") : translate("game.noCorrection")}
           </button>
         </div>
       </div>
@@ -2538,10 +2565,9 @@ function Challenge({
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div className="dialog-header">
-            <Dialog.Title>Korrektur anmelden</Dialog.Title>
+            <Dialog.Title>{translate("game.challengeDialogTitle")}</Dialog.Title>
             <Dialog.Description>
-              Wähle das Team, das die Karte an dieser Luecke einsortieren
-              wuerde.
+              {translate("game.challengeDialogDescription")}
             </Dialog.Description>
           </div>
           <div className="challenge-list">
@@ -2570,7 +2596,7 @@ function Challenge({
                   <div className="challenge-team-meta">
                     <div
                       className="coin-row"
-                      aria-label={`${player.extraPoints} Korrekturpunkte`}
+                      aria-label={translate("game.correctionPoints", { count: player.extraPoints })}
                     >
                       {Array.from(
                         { length: player.extraPoints },
@@ -2579,7 +2605,7 @@ function Challenge({
                         ),
                       )}
                     </div>
-                    <small>{player.extraPoints+" "} Korrekturen übrig</small>
+                    <small>{translate("game.remainingCorrections", { count: player.extraPoints })}</small>
                   </div>
                 </button>
               ))}
@@ -2599,7 +2625,7 @@ function Challenge({
                   setSelectedCorrectionIndex(undefined);
                 }}
               >
-                Entfernen
+                {translate("game.remove")}
               </button>
             ) : null}
             <button
@@ -2607,7 +2633,7 @@ function Challenge({
               type="button"
               onClick={() => setSelectedCorrectionIndex(undefined)}
             >
-              Abbrechen
+              {translate("setup.cancel")}
             </button>
           </div>
         </Dialog.Content>
@@ -2637,6 +2663,8 @@ function CorrectionTimeline({
   paused: boolean;
   player: Player;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const orderKey = game.settings.orderSelector.key;
   const displayEntry = activeEntry
     ? {
@@ -2673,7 +2701,7 @@ function CorrectionTimeline({
                     style={claimPlayer ? ({ "--player-color": claimPlayer.color } as React.CSSProperties) : undefined}
                     transition={{ duration: 0.82, ease: [0.16, 1, 0.3, 1] }}
                     type="button"
-                    aria-label={`Korrektur an Position ${index + 1} anmelden`}
+                    aria-label={translate("game.challengePositionAria", { position: index + 1 })}
                   >
                     {claimPlayer ? <span>{claimPlayer.name}</span> : "+"}
                   </motion.button>
@@ -2714,6 +2742,8 @@ function RoundResultView({
   onNext: () => void;
   paused: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const result = game.activeRound?.result;
   const [revealResult, setRevealResult] = useState(false);
   const entry = getActiveEntry(game);
@@ -2721,6 +2751,7 @@ function RoundResultView({
   const awardedPlayer = game.players.find((player) => player.id === result?.awardedPlayerId);
   const proposedIndex = game.activeRound?.proposedIndex;
   const extraGuessResults = entry ? getExtraGuessResults(game, entry) : [];
+  const resultMessage = result ? getRoundResultMessage(result, activePlayer, awardedPlayer, translate) : "";
   useFooterActions([]);
 
   useEffect(() => {
@@ -2743,22 +2774,22 @@ function RoundResultView({
             }
           </div>
           <div className="result-box-actions">
-            {result?.message ? <p>{result.message}</p> : null}
+            {resultMessage ? <p>{resultMessage}</p> : null}
             {extraGuessResults.length > 0 ? (
               <div className="guess-result-summary">
                 <div className="guess-result-list">
                   {extraGuessResults.map((guess) => (
                     <span className={guess.correct ? "guess-result correct" : "guess-result"} key={guess.key}>
-                      {guess.label}: {guess.correct ? "richtig" : "falsch"}
+                      {getEntryFieldLabel(guess.key, guess.label, translate)}: {guess.correct ? translate("game.extraGuessCorrect") : translate("game.extraGuessWrong")}
                     </span>
                   ))}
                 </div>
-                {result?.extraGuessesCorrect ? <strong>+1 Korrekturpunkt</strong> : null}
+                {result?.extraGuessesCorrect ? <strong>{translate("game.extraPointAwarded")}</strong> : null}
               </div>
             ) : null}
             <button className="primary-button" type="button" onClick={onNext}>
               <Play size={16} fill="currentColor" />
-              Weiter
+              {translate("game.next")}
             </button>
           </div>
         </motion.div>
@@ -2779,9 +2810,11 @@ function RoundResultView({
 }
 
 function ResultLottie({ correct }: { correct: boolean }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   return (
     <DotLottieReact
-      aria-label={correct ? "Richtig" : "Falsch"}
+      aria-label={correct ? translate("game.correct") : translate("game.wrong")}
       autoplay
       className="result-lottie"
       loop={false}
@@ -2789,6 +2822,33 @@ function ResultLottie({ correct }: { correct: boolean }) {
     />
   );
 }
+
+const getRoundResultMessage = (
+  result: RoundResult,
+  activePlayer: Player,
+  awardedPlayer: Player | undefined,
+  translate: ReturnType<typeof createTranslator>,
+) => {
+  if (result.message) return result.message;
+
+  if (!result.challenged && result.activePlayerCorrect) {
+    return translate("game.result.correctNoChallenge", {
+      team: activePlayer.name || translate("game.result.activeTeam"),
+    });
+  }
+  if (!result.challenged) return translate("game.result.wrongNoChallenge");
+  if (result.activePlayerCorrect) {
+    return translate("game.result.challengeWrong", {
+      team: activePlayer.name || translate("game.result.activeTeam"),
+    });
+  }
+  if (result.challengerWasRight) {
+    return translate("game.result.challengeCorrect", {
+      team: awardedPlayer?.name || translate("game.result.correctingTeam"),
+    });
+  }
+  return translate("game.result.noChallengeCorrect");
+};
 
 function TimelinePreview({
   audioProgress,
@@ -2811,6 +2871,8 @@ function TimelinePreview({
   player: Player;
   revealInserted?: boolean;
 }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const orderKey = game.settings.orderSelector.key;
   const timeline = getTimelinePreviewEntries(player.timeline, entry, insertIndex);
 
@@ -2818,7 +2880,7 @@ function TimelinePreview({
     <div className="timeline-preview">
       <div className="timeline-row preview">
         {timeline.length === 0 ? (
-          <div className="timeline-empty">Noch keine Karten in der Reihe.</div>
+          <div className="timeline-empty">{translate("game.emptyTimeline")}</div>
         ) : (
           timeline.map((item) => (
             <TimelineCard
@@ -2844,6 +2906,8 @@ function TimelinePreview({
 }
 
 function FinishedGame({ game }: { game: Game }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const topScore = Math.max(...game.players.map((player) => player.points));
   const winners = game.players.filter((player) => player.points === topScore);
   const winnerCard = winners.flatMap((winner) => winner.timeline).at(-1);
@@ -2853,8 +2917,8 @@ function FinishedGame({ game }: { game: Game }) {
 
   return (
     <div className="flow finished-game-flow">
-      <section className="finished-podium" aria-label="Endstand">
-        <p>Spiel beendet</p>
+      <section className="finished-podium" aria-label={translate("game.finalStandings")}>
+        <p>{translate("game.finished")}</p>
         <div className="podium-stand">
           {podiumPlayers.map((player) => {
             const rank = rankedPlayers.findIndex((candidate) => candidate.id === player.id) + 1;
@@ -2867,7 +2931,7 @@ function FinishedGame({ game }: { game: Game }) {
                 <div className="podium-team-meta">
                   <TeamAvatar color={player.color} name={player.name} small />
                   <strong>{player.name}</strong>
-                  <span>{player.points} Punkte</span>
+                  <span>{translate("game.points", { count: player.points })}</span>
                 </div>
                 <div className="podium-step">{rank}</div>
               </article>
@@ -2877,7 +2941,7 @@ function FinishedGame({ game }: { game: Game }) {
       </section>
       {winnerCard ? (
         <section className="winner-card-stage">
-          <p>Gewinnerkarte</p>
+          <p>{translate("game.winnerCard")}</p>
           <TimelineCard displaySelectors={game.settings.displaySelectors} entry={winnerCard} mode={game.settings.mode} orderKey={game.settings.orderSelector.key} />
         </section>
       ) : null}
@@ -2888,11 +2952,11 @@ function FinishedGame({ game }: { game: Game }) {
               <TeamAvatar color={player.color} name={player.name} small />
               <div>
                 <h2>{player.name}</h2>
-                <p>{player.points} Punkte · {player.timeline.length} Karten</p>
+                <p>{translate("game.points", { count: player.points })} · {translate("game.cards", { count: player.timeline.length })}</p>
               </div>
             </div>
             {player.timeline.length === 0 ? (
-              <p className="muted">Keine Karten gesammelt.</p>
+              <p className="muted">{translate("game.noCollectedCards")}</p>
             ) : (
               <div className="finished-order-row">
                 {player.timeline.map((entry) => (
@@ -2960,6 +3024,7 @@ const createGridMotionRows = (entries: GuessEntry[], rowCount: number) => {
 
 export function HistoryPage() {
   const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const deleteHistoryEntry = (id: string) => {
     setState((current) => ({
       ...current,
@@ -2970,17 +3035,17 @@ export function HistoryPage() {
   return (
     <section className="panel history-panel">
       <div className="section-heading">
-        <p>Archiv</p>
-        <h1>Historie</h1>
+        <p>{translate("history.archive")}</p>
+        <h1>{translate("history.title")}</h1>
       </div>
       {state.history.length === 0 ? (
-        <p className="muted">Noch keine abgeschlossenen Spiele.</p>
+        <p className="muted">{translate("history.empty")}</p>
       ) : (
         <div className="history-list">
           {state.history.map((game) => (
             <article className="history-item" key={game.id}>
               <button
-                aria-label={`${game.name} löschen`}
+                aria-label={translate("history.deleteAria", { name: game.name })}
                 className="history-delete-button"
                 type="button"
                 onClick={() => deleteHistoryEntry(game.id)}
@@ -2991,7 +3056,7 @@ export function HistoryPage() {
                 <div>
                   <h2>{game.name}</h2>
                   <p>
-                    {new Date(game.finishedAt).toLocaleString("de-DE")} · {game.replayEntries?.length ?? 0} Replay-Karten
+                    {new Date(game.finishedAt).toLocaleString(state.preferences.language === "de" ? "de-DE" : "en-US")} · {translate("history.replayCards", { count: game.replayEntries?.length ?? 0 })}
                   </p>
                 </div>
                 <div className="history-scores">
@@ -3008,7 +3073,7 @@ export function HistoryPage() {
       )}
       <button className="ghost-button" onClick={resetState}>
         <Trash2 size={15} />
-        Lokale Daten zurücksetzen
+        {translate("history.resetLocalData")}
       </button>
     </section>
   );
@@ -3016,15 +3081,16 @@ export function HistoryPage() {
 
 export function HistoryDetailPage({ gameId }: { gameId: string }) {
   const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const summary = state.history.find((entry) => entry.id === gameId);
 
   if (!summary) {
     return (
       <section className="empty-state">
-        <h1>Historie</h1>
-        <p>Dieses Spiel wurde nicht gefunden.</p>
+        <h1>{translate("history.title")}</h1>
+        <p>{translate("history.notFound")}</p>
         <Link className="primary-button" to="/history">
-          Zur Historie
+          {translate("history.backToHistory")}
         </Link>
       </section>
     );
@@ -3115,8 +3181,8 @@ export function SettingsPage() {
                 }))
               }
             >
-              <option value="de">Deutsch</option>
-              <option value="en">English</option>
+              <option value="de">{translate("language.de")}</option>
+              <option value="en">{translate("language.en")}</option>
             </select>
           </label>
         </div>
@@ -3124,8 +3190,8 @@ export function SettingsPage() {
     
     <section className="settings-card connector-main-card">
         <div>
-          <h2>Connectoren</h2>
-          <p>Dienste, die Spielmodi mit externen Daten versorgen.</p>
+          <h2>{translate("settings.connectorsTitle")}</h2>
+          <p>{translate("settings.connectorsHint")}</p>
         </div>
         <div className="connector-list">
           <form className="connector-card" onSubmit={connectSpotify}>
@@ -3186,26 +3252,28 @@ export function SettingsPage() {
 }
 
 export function SpotifyCallbackPage() {
+  const state = useAppState();
+  const translate = useMemo(() => createTranslator(state.preferences.language), [state.preferences.language]);
   const navigate = useNavigate();
-  const [message, setMessage] = useState("Spotify Verbindung wird abgeschlossen...");
+  const [message, setMessage] = useState(translate("spotify.callbackCompleting"));
   const [error, setError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
-    const state = params.get("state");
+    const callbackState = params.get("state");
     const callbackError = params.get("error");
 
     if (callbackError) {
-      setError(`Spotify hat den Login abgebrochen: ${callbackError}`);
+      setError(translate("spotify.callbackCancelled", { error: callbackError }));
       return;
     }
-    if (!code || !state) {
-      setError("Spotify Callback enthält keinen Code.");
+    if (!code || !callbackState) {
+      setError(translate("spotify.callbackMissingCode"));
       return;
     }
 
-    completeSpotifyAuthorization(code, state)
+    completeSpotifyAuthorization(code, callbackState)
       .then(({ connector, returnTo }) => {
         setState((current) => ({
           ...current,
@@ -3214,13 +3282,13 @@ export function SpotifyCallbackPage() {
             ...current.connectors.filter((entry) => entry.kind !== "spotify"),
           ],
         }));
-        setMessage("Spotify ist verbunden.");
+        setMessage(translate("spotify.callbackConnected"));
         navigate({ to: returnTo, replace: true });
       })
       .catch((authError) => {
-        setError(authError instanceof Error ? authError.message : "Spotify Verbindung fehlgeschlagen.");
+        setError(authError instanceof Error ? authError.message : translate("spotify.callbackFailed"));
       });
-  }, [navigate]);
+  }, [navigate, translate]);
 
   return (
     <section className="empty-state">
@@ -3228,7 +3296,7 @@ export function SpotifyCallbackPage() {
       <p>{error || message}</p>
       {error ? (
         <Link className="primary-button" to="/settings">
-          Zurück zu Settings
+          {translate("spotify.backToSettings")}
         </Link>
       ) : null}
     </section>
@@ -3236,6 +3304,8 @@ export function SpotifyCallbackPage() {
 }
 
 function AudioPresentation({ entry, compact = false }: { entry: GuessEntry; compact?: boolean }) {
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
   const audio = entry.audioPreview;
   const spotifyUri = typeof entry.spotifyUri === "string" ? entry.spotifyUri : undefined;
 
@@ -3245,11 +3315,11 @@ function AudioPresentation({ entry, compact = false }: { entry: GuessEntry; comp
         Audio
       </div>
       {isAudioValue(audio) ? (
-        <audio controls preload="none" src={audio.url} aria-label="Audio der gezogenen Karte" />
+        <audio controls preload="none" src={audio.url} aria-label={translate("game.audioOfCard")} />
       ) : spotifyUri ? (
-        <p className="muted">Spotify Playback aktiv.</p>
+        <p className="muted">{translate("game.spotifyPlaybackActive")}</p>
       ) : (
-        <p className="muted">Keine Audioquelle für diese Karte vorhanden.</p>
+        <p className="muted">{translate("game.noAudioSource")}</p>
       )}
     </article>
   );
@@ -3349,6 +3419,31 @@ const getEntryImage = (entry: GuessEntry) => {
 type CardSelector = NonNullable<GameSettings["displaySelectors"]>[number];
 type CardTextValue = { key: string; value: string };
 
+const entryFieldLabelKeys: Record<string, TranslationKey> = {
+  album: "label.album",
+  albumCover: "label.cover",
+  artist: "label.artist",
+  audio: "label.audio",
+  audioPreview: "label.song",
+  cover: "label.cover",
+  durationMs: "label.duration",
+  horsepower: "label.value",
+  image: "label.image",
+  manufacturer: "label.manufacturer",
+  model: "label.model",
+  title: "label.title",
+  year: "label.year",
+};
+
+const getEntryFieldLabel = (
+  key: string,
+  fallback: string,
+  translate: ReturnType<typeof createTranslator>,
+) => {
+  const translationKey = entryFieldLabelKeys[key];
+  return translationKey ? translate(translationKey) : fallback;
+};
+
 const normalizeCardSelectors = (
   selectors: GameSettings["displaySelectors"] | undefined,
   entry: GuessEntry,
@@ -3359,7 +3454,7 @@ const normalizeCardSelectors = (
     ? [...selectors]
     : ([
         { label: "Cover", key: getEntryImage(entry) ? "albumCover" : "image", type: "image" },
-        { label: "Titel", key: "title", type: "text" },
+        { label: "Title", key: "title", type: "text" },
         { label: "Artist", key: "artist", type: "text" },
       ] as CardSelector[]);
   const hasOrderKey = normalized.some((selector) => selector.key === orderKey);
@@ -3507,28 +3602,30 @@ const getExtraGuessResults = (game: Game, entry: GuessEntry) =>
     };
   });
 
-const modeLabels: Record<GameMode, string> = {
-  "spotify-generator": "Spotify-Generator",
-  "image-art": "Bild-Künstler",
-  autoquartett: "Autoquartett",
-  replay: "Replay",
-  custom: "Custom",
+const modeLabelKeys: Record<GameMode, TranslationKey> = {
+  "spotify-generator": "mode.spotifyGenerator.label",
+  "image-art": "mode.imageArt.label",
+  autoquartett: "mode.autoquartett.label",
+  replay: "mode.replay.label",
+  custom: "mode.custom.label",
 };
 
-const modeDescriptions: Record<GameMode, string> = {
-  "spotify-generator": "Song-Daten von Spotify (Premium) laden",
-  "image-art": "Bekannte Kunstwerke laden",
-  autoquartett: "KFZ-Daten laden",
-  replay: "Vergangenes Spiel erneut spielen.",
-  custom: "Tabelle laden",
+const modeDescriptionKeys: Record<GameMode, TranslationKey> = {
+  "spotify-generator": "mode.spotifyGenerator.description",
+  "image-art": "mode.imageArt.description",
+  autoquartett: "mode.autoquartett.description",
+  replay: "mode.replay.description",
+  custom: "mode.custom.description",
 };
 
 function ModeSelect({ value, onValueChange }: { value: GameMode; onValueChange: (value: GameMode) => void }) {
-  const modes = Object.keys(modeLabels) as GameMode[];
+  const state = useAppState();
+  const translate = createTranslator(state.preferences.language);
+  const modes = Object.keys(modeLabelKeys) as GameMode[];
 
   return (
     <Select.Root value={value} onValueChange={(nextValue) => onValueChange(nextValue as GameMode)}>
-      <Select.Trigger className="select-trigger mode-select-trigger" aria-label="Spielmodus auswählen">
+      <Select.Trigger className="select-trigger mode-select-trigger" aria-label={translate("mode.selectLabel")}>
         <Select.Value />
         <Select.Icon className="mode-select-icon">⌄</Select.Icon>
       </Select.Trigger>
@@ -3538,8 +3635,8 @@ function ModeSelect({ value, onValueChange }: { value: GameMode; onValueChange: 
             {modes.map((mode) => (
               <Select.Item className="mode-select-item" value={mode} key={mode}>
                 <Select.ItemText>
-                  <span>{modeLabels[mode]}</span>
-                  <small>{modeDescriptions[mode]}</small>
+                  <span>{translate(modeLabelKeys[mode])}</span>
+                  <small>{translate(modeDescriptionKeys[mode])}</small>
                 </Select.ItemText>
                 <Select.ItemIndicator className="mode-select-check">
                   <Check size={14} />
@@ -3627,10 +3724,14 @@ const getTeamIconDataUri = (name: string, color: string, eyes?: "bow" | "wink") 
   }).toDataUri();
 };
 
-const getStopConditionSummary = (type: "maxPoints" | "maxRounds" | "leadPoints", value: number) => {
-  if (type === "maxRounds") return `${value} Runden`;
-  if (type === "leadPoints") return `${value} Punkte Vorsprung`;
-  return `${value} Punkte bis Sieg`;
+const getStopConditionSummary = (
+  type: "maxPoints" | "maxRounds" | "leadPoints",
+  value: number,
+  translate: ReturnType<typeof createTranslator>,
+) => {
+  if (type === "maxRounds") return translate("stop.summary.maxRounds", { count: value });
+  if (type === "leadPoints") return translate("stop.summary.leadPoints", { count: value });
+  return translate("stop.summary.maxPoints", { count: value });
 };
 
 const isAudioCardMode = (mode: GameMode) => mode === "spotify-generator" || mode === "replay";
@@ -3638,23 +3739,23 @@ const isAudioCardMode = (mode: GameMode) => mode === "spotify-generator" || mode
 const stopConditionOptions = [
   {
     type: "maxPoints" as const,
-    label: "Punkte",
-    description: "Wer zuerst das Ziel erreicht, gewinnt.",
-    valueLabel: "Punkte bis Sieg",
+    labelKey: "stop.maxPoints.label" as const,
+    descriptionKey: "stop.maxPoints.description" as const,
+    valueLabelKey: "stop.maxPoints.valueLabel" as const,
     defaultValue: 10,
   },
   {
     type: "maxRounds" as const,
-    label: "Runden",
-    description: "Nach fester Rundenzahl gewinnt der höchste Score.",
-    valueLabel: "Maximale Runden",
+    labelKey: "stop.maxRounds.label" as const,
+    descriptionKey: "stop.maxRounds.description" as const,
+    valueLabelKey: "stop.maxRounds.valueLabel" as const,
     defaultValue: 12,
   },
   {
     type: "leadPoints" as const,
-    label: "Vorsprung",
-    description: "Spiel endet bei genug Abstand zum Feld.",
-    valueLabel: "Nötiger Vorsprung",
+    labelKey: "stop.leadPoints.label" as const,
+    descriptionKey: "stop.leadPoints.description" as const,
+    valueLabelKey: "stop.leadPoints.valueLabel" as const,
     defaultValue: 3,
   },
 ];
@@ -3679,102 +3780,15 @@ const createDefaultSetupPlayers = () =>
     color: playerColors[index],
   }));
 
-const createDefaultGameName = (index: number) =>
-  `Spiel ${index} am ${new Date().toLocaleDateString("de-DE")}`;
-
-const translations = {
-  de: {
-    "nav.setup": "Setup",
-    "nav.game": "Spiel",
-    "nav.history": "Historie",
-    "nav.settings": "Settings",
-    "footer.newGame": "Neues Spiel",
-    "footer.history": "Verlauf",
-    "footer.menu": "Menü",
-    "footer.finishGame": "Spiel beenden",
-    "footer.menuHistory": "Historie",
-    "footer.settings": "Einstellungen",
-    "header.activeGameActions": "Aktives Spiel",
-    "header.continueGame": "Spiel fortsetzen",
-    "header.finishGame": "Spiel beenden",
-    "menu.status": "Status",
-    "menu.saved": "Spiel gespeichert",
-    "menu.ready": "Bereit",
-    "menu.connectors": "Connectoren",
-    "settings.eyebrow": "App",
-    "settings.title": "Settings",
-    "settings.appearance": "Darstellung",
-    "settings.appearanceHint": "Theme und Sprache werden lokal gespeichert.",
-    "settings.theme": "App-Theme",
-    "settings.language": "Sprache",
-    "settings.spotifyConnected": "Verbunden",
-    "settings.as": "als",
-    "settings.spotifyRequired": "Nötig für den Spotify-Generator.",
-    "settings.active": "aktiv",
-    "settings.open": "offen",
-    "settings.spotifyConfigMissing": "Spotify App-Konfiguration fehlt",
-    "settings.spotifyConfigHint": "Setze VITE_SPOTIFY_CLIENT_ID in .env.local. Die Client ID bekommst du im Spotify Developer Dashboard.",
-    "settings.openDashboard": "Dashboard öffnen",
-    "settings.localhostUnsupported": "localhost wird von Spotify nicht akzeptiert",
-    "settings.localhostHint": "Öffne die App für den Spotify-Login über die Loopback-IP. Trage im Spotify Dashboard dieselbe Redirect URI ein.",
-    "settings.openLoopback": "Mit 127.0.0.1 öffnen",
-    "settings.disconnect": "Trennen",
-    "settings.reconnect": "Neu verbinden",
-    "settings.connectSpotify": "Mit Spotify verbinden",
-    "settings.spotifyStartError": "Spotify Verbindung konnte nicht gestartet werden.",
-    "theme.system": "System",
-    "theme.light": "Hell",
-    "theme.dark": "Dunkel",
-  },
-  en: {
-    "nav.setup": "Setup",
-    "nav.game": "Game",
-    "nav.history": "History",
-    "nav.settings": "Settings",
-    "footer.newGame": "New game",
-    "footer.history": "History",
-    "footer.menu": "Menu",
-    "footer.finishGame": "End game",
-    "footer.menuHistory": "History",
-    "footer.settings": "Settings",
-    "header.activeGameActions": "Active game",
-    "header.continueGame": "Continue game",
-    "header.finishGame": "End game",
-    "menu.status": "Status",
-    "menu.saved": "Game saved",
-    "menu.ready": "Ready",
-    "menu.connectors": "Connectors",
-    "settings.eyebrow": "App",
-    "settings.title": "Settings",
-    "settings.appearance": "Appearance",
-    "settings.appearanceHint": "Theme and language are stored locally.",
-    "settings.theme": "App theme",
-    "settings.language": "Language",
-    "settings.spotifyConnected": "Connected",
-    "settings.as": "as",
-    "settings.spotifyRequired": "Required for the Spotify generator.",
-    "settings.active": "active",
-    "settings.open": "open",
-    "settings.spotifyConfigMissing": "Spotify app configuration missing",
-    "settings.spotifyConfigHint": "Set VITE_SPOTIFY_CLIENT_ID in .env.local. You can get the client ID from the Spotify Developer Dashboard.",
-    "settings.openDashboard": "Open dashboard",
-    "settings.localhostUnsupported": "Spotify does not accept localhost",
-    "settings.localhostHint": "Open the app through the loopback IP for Spotify login. Add the same redirect URI in the Spotify Dashboard.",
-    "settings.openLoopback": "Open with 127.0.0.1",
-    "settings.disconnect": "Disconnect",
-    "settings.reconnect": "Reconnect",
-    "settings.connectSpotify": "Connect Spotify",
-    "settings.spotifyStartError": "Spotify connection could not be started.",
-    "theme.system": "System",
-    "theme.light": "Light",
-    "theme.dark": "Dark",
-  },
-} as const;
-
-type TranslationKey = keyof typeof translations.de;
-
-const createTranslator = (language: keyof typeof translations) => (key: TranslationKey) =>
-  translations[language]?.[key] ?? translations.de[key];
+const createDefaultGameName = (
+  index: number,
+  language: "de" | "en",
+  translate: ReturnType<typeof createTranslator>,
+) =>
+  translate("setup.defaultGameName", {
+    index,
+    date: new Date().toLocaleDateString(language === "de" ? "de-DE" : "en-US"),
+  });
 
 const getTimelinePreviewEntries = (timeline: GuessEntry[], entry?: GuessEntry, insertIndex?: number) => {
   if (!entry || insertIndex === undefined) return timeline;
@@ -3803,7 +3817,7 @@ const createGameFromHistorySummary = (summary: FinishedGameSummary): Game => {
       settings.mode === "spotify-generator"
         ? {
             id: "history-spotify",
-            label: "Historie",
+            label: "History",
             type: "spotify-generator",
             seed: "history",
             connectorId: "history",
@@ -3812,7 +3826,7 @@ const createGameFromHistorySummary = (summary: FinishedGameSummary): Game => {
           }
         : {
             id: "history",
-            label: "Historie",
+            label: "History",
             type: settings.mode,
             generatedCount: summary.replayEntries?.length ?? 0,
             exhausted: true,
@@ -3832,13 +3846,13 @@ const createHistoryFallbackSettings = (summary: FinishedGameSummary): GameSettin
   presentSelector: { type: "audio", key: "audioPreview" },
   orderSelector: { key: "year", dir: "asc" },
   extraGuessSelectors: [
-    { type: "text-loose", key: "title", label: "Titel" },
+    { type: "text-loose", key: "title", label: "Title" },
     { type: "text-loose", key: "artist", label: "Artist" },
   ],
   displaySelectors: [
     { label: "Cover", key: "albumCover", type: "image" },
-    { label: "Titel", key: "title", type: "text" },
+    { label: "Title", key: "title", type: "text" },
     { label: "Artist", key: "artist", type: "text" },
-    { label: "Jahr", key: "year", type: "text" },
+    { label: "Year", key: "year", type: "text" },
   ],
 });

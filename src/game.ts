@@ -53,12 +53,12 @@ const spotifyHitsterSettings: GameSettings = {
     dir: "asc",
   },
   extraGuessSelectors: [
-    { type: "text-loose", key: "title", label: "Titel" },
+    { type: "text-loose", key: "title", label: "Title" },
     { type: "text-loose", key: "artist", label: "Artist" },
   ],
   displaySelectors: [
     { label: "Album", key: "albumCover", type: "image" },
-    { label: "Jahr", key: "year", type: "text" },
+    { label: "Year", key: "year", type: "text" },
   ],
 };
 
@@ -69,7 +69,7 @@ const replaySettings: GameSettings = {
 };
 
 const imageArtSettings: GameSettings = {
-  name: "Bild-Künstler",
+  name: "Image artist",
   mode: "image-art",
   stopCondition: { type: "maxPoints", points: 10 },
   cardChoiceCount: 3,
@@ -82,11 +82,11 @@ const imageArtSettings: GameSettings = {
     dir: "asc",
   },
   extraGuessSelectors: [
-    { type: "text-loose", key: "artist", label: "Künstler" },
+    { type: "text-loose", key: "artist", label: "Artist" },
   ],
   displaySelectors: [
-    { label: "Bild", key: "image", type: "image" },
-    { label: "Jahr", key: "year", type: "text" },
+    { label: "Image", key: "image", type: "image" },
+    { label: "Year", key: "year", type: "text" },
   ],
 };
 
@@ -104,12 +104,12 @@ const autoquartettSettings: GameSettings = {
     dir: "asc",
   },
   extraGuessSelectors: [
-    { type: "text-loose", key: "manufacturer", label: "Hersteller" },
+    { type: "text-loose", key: "manufacturer", label: "Manufacturer" },
     { type: "text-loose", key: "model", label: "Modell" },
   ],
   displaySelectors: [
-    { label: "Bild", key: "image", type: "image" },
-    { label: "Hersteller", key: "manufacturer", type: "text" },
+    { label: "Image", key: "image", type: "image" },
+    { label: "Manufacturer", key: "manufacturer", type: "text" },
     { label: "Modell", key: "model", type: "text" },
     { label: "PS", key: "horsepower", type: "text" },
   ],
@@ -130,8 +130,8 @@ const customSettings: GameSettings = {
   },
   extraGuessSelectors: [],
   displaySelectors: [
-    { label: "Bild", key: "image", type: "image" },
-    { label: "Wert", key: "year", type: "text" },
+    { label: "Image", key: "image", type: "image" },
+    { label: "Value", key: "year", type: "text" },
   ],
 };
 
@@ -439,19 +439,19 @@ const getSpotifyCardSelector = (key: SpotifyAdvancedSettings["cardBackKeys"][num
 };
 
 const spotifyCardFrontSelectorMap: Record<SpotifyAdvancedSettings["cardFrontKeys"][number], GameSettings["displaySelectors"][number]> = {
-  title: { label: "Titel", key: "title", type: "text" },
+  title: { label: "Title", key: "title", type: "text" },
   artist: { label: "Artist", key: "artist", type: "text" },
-  year: { label: "Jahr", key: "year", type: "text" },
-  durationMs: { label: "Dauer", key: "durationMs", type: "text" },
+  year: { label: "Year", key: "year", type: "text" },
+  durationMs: { label: "Duration", key: "durationMs", type: "text" },
   albumCover: { label: "Cover", key: "albumCover", type: "image" },
   audioPreview: { label: "Song", key: "audioPreview", type: "text" },
 };
 
 const spotifyExtraGuessSelectorMap: Record<SpotifyAdvancedSettings["extraGuessKeys"][number], GameSettings["extraGuessSelectors"][number]> = {
-  title: { label: "Titel", key: "title", type: "text-loose" },
+  title: { label: "Title", key: "title", type: "text-loose" },
   artist: { label: "Artist", key: "artist", type: "text-loose" },
-  year: { label: "Jahr", key: "year", type: "number" },
-  durationMs: { label: "Dauer", key: "durationMs", type: "text-loose" },
+  year: { label: "Year", key: "year", type: "number" },
+  durationMs: { label: "Duration", key: "durationMs", type: "text-loose" },
 };
 
 const createGeneratorSettings = (input: NewGameInput): GameGeneratorSettings => {
@@ -592,14 +592,6 @@ export const resolveRound = (game: Game, correctionClaims: RoundCorrectionClaim[
     correctionClaims,
     extraGuessesCorrect,
     extraPointAwardedPlayerId: extraGuessesCorrect ? activePlayer.id : undefined,
-    message: buildResultMessage(
-      activePlayerCorrect,
-      challenged,
-      challengerWasRight,
-      activePlayer.id,
-      winningClaim?.playerId,
-      game.players,
-    ),
   };
 
   const players = game.players.map((player) => {
@@ -753,25 +745,6 @@ const getCorrectInsertionRange = (
     start: Math.min(...equalIndexes),
     end: Math.max(...equalIndexes) + 1,
   };
-};
-
-const buildResultMessage = (
-  activePlayerCorrect: boolean,
-  challenged: boolean,
-  challengerWasRight = false,
-  activePlayerId?: string,
-  winningPlayerId?: string,
-  players: Player[] = [],
-) => {
-  const activePlayer = players.find((player) => player.id === activePlayerId);
-  if (!challenged && activePlayerCorrect) return `Richtig einsortiert. Die Karte geht an ${activePlayer?.name ?? "das aktive Team"}.`;
-  if (!challenged) return "Nicht korrekt einsortiert. Die Karte wird abgelegt.";
-  if (activePlayerCorrect) return `Die Korrektur war falsch. Die Karte bleibt bei ${activePlayer?.name ?? "dem aktiven Team"}.`;
-  if (challengerWasRight) {
-    const winningPlayer = players.find((player) => player.id === winningPlayerId);
-    return `Eine Korrektur war richtig. Die Karte geht an ${winningPlayer?.name ?? "das korrigierende Team"}.`;
-  }
-  return "Keine Korrektur war richtig. Die Karte wird abgelegt.";
 };
 
 const areExtraGuessesCorrect = (game: Game, entry: GuessEntry) => {
