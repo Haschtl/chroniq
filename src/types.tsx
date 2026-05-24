@@ -13,7 +13,7 @@ export type MediaData =
       alt?: string;
     };
 
-export type GuessValue = number | string | boolean | MediaData | Record<string, string>;
+export type GuessValue = number | string | boolean | MediaData | GuessValue[] | { [key: string]: GuessValue | undefined };
 export type GuessEntry = Record<string, GuessValue> & {
   id: string;
   used?: boolean;
@@ -24,6 +24,13 @@ export type GuessEntry = Record<string, GuessValue> & {
   artist?: string;
   manufacturer?: string;
   year?: number;
+  spotifyReleaseYear?: number;
+  spotifyReleaseDate?: string;
+  historicalReleaseYear?: number;
+  historicalReleaseDate?: string;
+  releaseYearSource?: "musicbrainz" | "spotify";
+  isrc?: string;
+  musicBrainz?: { [key: string]: GuessValue | undefined };
   horsepower?: number;
   powerKw?: number;
   albumCover?: Extract<MediaData, { type: "image" }>;

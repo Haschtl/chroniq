@@ -1,10 +1,13 @@
-import type { DataConnector, GeneratedEntriesResult, GuessEntry, MediaData } from "./types";
+import type { DataConnector, GeneratedEntriesResult, GuessEntry, GuessValue, MediaData } from "./types";
 
 const AUTHORIZE_URL = "https://accounts.spotify.com/authorize";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const PROFILE_URL = "https://api.spotify.com/v1/me";
 const API_URL = "https://api.spotify.com/v1";
 const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
+const MUSICBRAINZ_API_URL = "https://musicbrainz.org/ws/2";
+const MUSICBRAINZ_CACHE_KEY = "chroniq:musicbrainz-release-cache:v2";
+const MUSICBRAINZ_REQUEST_INTERVAL_MS = 1_150;
 const OAUTH_STORAGE_KEY = "chroniq:spotify-oauth";
 const SCOPES = ["user-read-private", "user-read-email", "streaming", "user-read-playback-state", "user-modify-playback-state"];
 const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID?.trim() ?? "";
@@ -58,9 +61,87 @@ interface SpotifyTrack {
   album?: SpotifyAlbum;
   duration_ms?: number;
   preview_url?: string | null;
+  external_ids?: {
+    isrc?: string;
+  };
   external_urls?: {
     spotify?: string;
   };
+}
+
+interface MusicBrainzReleaseLookup {
+  date?: string;
+  year?: number;
+  recordingId?: string;
+  recordingTitle?: string;
+  recordingLengthMs?: number;
+  artistCredit?: string;
+  artists?: MusicBrainzArtistMetadata[];
+  artistNames?: string[];
+  isrcs?: string[];
+  earliestRelease?: MusicBrainzReleaseMetadata;
+  releaseGroups?: MusicBrainzReleaseGroupMetadata[];
+  releases?: MusicBrainzReleaseMetadata[];
+}
+
+interface MusicBrainzRelease {
+  id?: string;
+  title?: string;
+  date?: string;
+  country?: string;
+  status?: string;
+  barcode?: string;
+  "release-group"?: {
+    id?: string;
+    title?: string;
+    type?: string;
+    "primary-type"?: string;
+    "secondary-types"?: string[];
+    "first-release-date"?: string;
+  };
+}
+
+interface MusicBrainzRecording {
+  id?: string;
+  title?: string;
+  length?: number;
+  disambiguation?: string;
+  isrcs?: string[];
+  "first-release-date"?: string;
+  releases?: MusicBrainzRelease[];
+  "artist-credit"?: { name?: string; artist?: { id?: string; name?: string; "sort-name"?: string } }[];
+}
+
+interface MusicBrainzArtistMetadata {
+  id?: string;
+  name?: string;
+  sortName?: string;
+  creditName?: string;
+}
+
+interface MusicBrainzReleaseGroupMetadata {
+  id?: string;
+  title?: string;
+  type?: string;
+  primaryType?: string;
+  secondaryTypes?: string[];
+  firstReleaseDate?: string;
+  firstReleaseYear?: number;
+}
+
+interface MusicBrainzReleaseMetadata {
+  id?: string;
+  title?: string;
+  date?: string;
+  year?: number;
+  country?: string;
+  status?: string;
+  barcode?: string;
+  releaseGroup?: MusicBrainzReleaseGroupMetadata;
+}
+
+interface MusicBrainzRecordingResponse {
+  recordings?: MusicBrainzRecording[];
 }
 
 interface ItunesSearchResponse {
@@ -102,6 +183,8 @@ declare global {
 
 let playbackDevicePromise: Promise<string> | undefined;
 let playbackPlayer: SpotifyWebPlaybackInstance | undefined;
+let musicBrainzLastRequestAt = 0;
+let musicBrainzQueue = Promise.resolve();
 
 export type SpotifySeedType = "track" | "playlist" | "artist";
 
@@ -466,7 +549,7 @@ const getPlaylistTracks = async (accessToken: string, playlistId: string, index:
     `/playlists/${playlistId}/tracks?${new URLSearchParams({
       limit: String(pageSize),
       offset: String(index),
-      fields: "total,items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
+      fields: "total,items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_ids,external_urls))",
     }).toString()}`,
   );
 
@@ -486,7 +569,7 @@ const getPlaylistTracks = async (accessToken: string, playlistId: string, index:
         `/playlists/${playlistId}/tracks?${new URLSearchParams({
           limit: String(pageSize),
           offset: String(offset),
-          fields: "items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_urls))",
+          fields: "items(track(id,name,duration_ms,artists(id,name),album(name,release_date,images),preview_url,external_ids,external_urls))",
         }).toString()}`,
       ),
     ),
@@ -605,10 +688,13 @@ const tracksToGuessEntries = async (tracks: SpotifyTrack[], limit: number, exist
 
 const trackToGuessEntry = async (track: SpotifyTrack): Promise<GuessEntry | undefined> => {
   if (!track.id || !track.name) return undefined;
-  const releaseYear = Number(track.album?.release_date?.slice(0, 4));
-  if (!Number.isFinite(releaseYear)) return undefined;
-
   const artists = (track.artists ?? []).map((artist) => artist.name).filter(Boolean).join(", ");
+  const spotifyReleaseDate = normalizeMusicDate(track.album?.release_date);
+  const spotifyReleaseYear = parseMusicYear(spotifyReleaseDate);
+  const historicalRelease = await findHistoricalReleaseDate(track, track.name, artists);
+  const releaseYear = historicalRelease.year ?? spotifyReleaseYear;
+  if (releaseYear === undefined || !Number.isFinite(releaseYear)) return undefined;
+
   const previewUrl = track.preview_url ?? (await findExternalPreviewUrl(track.name, artists));
   const image = getSpotifyImage(track.album?.images);
   const albumCover: Extract<MediaData, { type: "image" }> | undefined = image
@@ -625,6 +711,15 @@ const trackToGuessEntry = async (track: SpotifyTrack): Promise<GuessEntry | unde
     title: track.name,
     artist: artists,
     year: releaseYear,
+    ...(spotifyReleaseYear ? { spotifyReleaseYear } : {}),
+    ...(spotifyReleaseDate ? { spotifyReleaseDate } : {}),
+    ...(historicalRelease.year ? { historicalReleaseYear: historicalRelease.year } : {}),
+    ...(historicalRelease.date ? { historicalReleaseDate: historicalRelease.date } : {}),
+    releaseYearSource: historicalRelease.year ? "musicbrainz" : "spotify",
+    ...(track.external_ids?.isrc ? { isrc: track.external_ids.isrc } : {}),
+    ...(historicalRelease.recordingId || historicalRelease.releases?.length
+      ? { musicBrainz: createMusicBrainzEntryMetadata(historicalRelease) }
+      : {}),
     durationMs: track.duration_ms ?? 0,
     spotifyUri: `spotify:track:${track.id}`,
     spotifyUrl: track.external_urls?.spotify ?? `https://open.spotify.com/track/${track.id}`,
@@ -643,6 +738,245 @@ const trackToGuessEntry = async (track: SpotifyTrack): Promise<GuessEntry | unde
 };
 
 const getSpotifyImage = (images?: SpotifyImage[]) => images?.find((image) => image.url)?.url;
+
+const findHistoricalReleaseDate = async (
+  track: SpotifyTrack,
+  title: string,
+  artists: string,
+): Promise<MusicBrainzReleaseLookup> => {
+  const spotifyDate = normalizeMusicDate(track.album?.release_date);
+  const spotifyYear = parseMusicYear(spotifyDate);
+  const isrc = track.external_ids?.isrc?.trim().toUpperCase();
+  const cacheKey = isrc ? `isrc:${isrc}` : `track:${normalizeMatchText(title)}:${normalizeMatchText(artists)}`;
+  const cached = readMusicBrainzCache()[cacheKey];
+  if (cached) return cached;
+
+  const lookup =
+    (isrc ? await lookupMusicBrainzByIsrc(isrc, title, artists).catch(() => undefined) : undefined) ??
+    (await lookupMusicBrainzByTitleAndArtist(title, artists).catch(() => undefined));
+  const result = lookup?.year ? lookup : { date: spotifyDate, year: spotifyYear };
+  writeMusicBrainzCache(cacheKey, result);
+  return result;
+};
+
+const lookupMusicBrainzByIsrc = async (isrc: string, title: string, artists: string) => {
+  const data = await fetchMusicBrainz<MusicBrainzRecordingResponse>(
+    `/isrc/${encodeURIComponent(isrc)}?${new URLSearchParams({
+      fmt: "json",
+      inc: "recordings+releases+release-groups+artist-credits+isrcs",
+    }).toString()}`,
+  );
+  return pickEarliestMusicBrainzRelease(data.recordings ?? [], title, artists);
+};
+
+const lookupMusicBrainzByTitleAndArtist = async (title: string, artists: string) => {
+  const primaryArtist = artists.split(",")[0]?.trim() || artists;
+  if (!title.trim() || !primaryArtist.trim()) return undefined;
+  const query = `recording:"${escapeMusicBrainzQuery(title)}" AND artist:"${escapeMusicBrainzQuery(primaryArtist)}"`;
+  const data = await fetchMusicBrainz<MusicBrainzRecordingResponse>(
+    `/recording?${new URLSearchParams({
+      fmt: "json",
+      query,
+      limit: "8",
+      inc: "releases+release-groups+artist-credits+isrcs",
+    }).toString()}`,
+  );
+  return pickEarliestMusicBrainzRelease(data.recordings ?? [], title, artists);
+};
+
+const pickEarliestMusicBrainzRelease = (recordings: MusicBrainzRecording[], title: string, artists: string) => {
+  const matchingRecordings = recordings.filter((recording) => musicBrainzRecordingMatches(recording, title, artists));
+  const candidates = matchingRecordings.length > 0 ? matchingRecordings : recordings;
+  const recording = candidates[0];
+  if (!recording) return undefined;
+  const releases = mapMusicBrainzReleases(recording.releases ?? []);
+  const releaseGroups = collectMusicBrainzReleaseGroups(releases);
+  const date = [normalizeMusicDate(recording["first-release-date"]), ...releases.map((release) => release.date)]
+    .filter((candidate): candidate is string => Boolean(candidate))
+    .sort(compareMusicDates)[0];
+  const year = parseMusicYear(date);
+  return year
+    ? {
+        date,
+        year,
+        recordingId: recording.id,
+        recordingTitle: recording.title,
+        recordingLengthMs: recording.length,
+        artistCredit: getMusicBrainzArtistCredit(recording),
+        artists: getMusicBrainzArtists(recording),
+        artistNames: getMusicBrainzArtistNames(recording),
+        isrcs: recording.isrcs,
+        earliestRelease: releases.find((release) => release.date === date) ?? releases[0],
+        releaseGroups,
+        releases,
+      }
+    : undefined;
+};
+
+const mapMusicBrainzReleases = (releases: MusicBrainzRelease[]): MusicBrainzReleaseMetadata[] =>
+  releases
+    .map((release) => {
+      const date = normalizeMusicDate(release.date ?? release["release-group"]?.["first-release-date"]);
+      const releaseGroup = mapMusicBrainzReleaseGroup(release["release-group"]);
+      return pruneUndefined({
+        id: release.id,
+        title: release.title,
+        date,
+        year: parseMusicYear(date),
+        country: release.country,
+        status: release.status,
+        barcode: release.barcode,
+        releaseGroup,
+      }) as MusicBrainzReleaseMetadata;
+    })
+    .sort((left, right) => compareMusicDates(left.date ?? "9999", right.date ?? "9999"));
+
+const mapMusicBrainzReleaseGroup = (releaseGroup?: MusicBrainzRelease["release-group"]): MusicBrainzReleaseGroupMetadata | undefined => {
+  if (!releaseGroup) return undefined;
+  const firstReleaseDate = normalizeMusicDate(releaseGroup["first-release-date"]);
+  return pruneUndefined({
+    id: releaseGroup.id,
+    title: releaseGroup.title,
+    type: releaseGroup.type,
+    primaryType: releaseGroup["primary-type"],
+    secondaryTypes: releaseGroup["secondary-types"],
+    firstReleaseDate,
+    firstReleaseYear: parseMusicYear(firstReleaseDate),
+  }) as MusicBrainzReleaseGroupMetadata;
+};
+
+const collectMusicBrainzReleaseGroups = (releases: MusicBrainzReleaseMetadata[]) => {
+  const seen = new Set<string>();
+  return releases
+    .map((release) => release.releaseGroup)
+    .filter((releaseGroup): releaseGroup is MusicBrainzReleaseGroupMetadata => Boolean(releaseGroup?.id ?? releaseGroup?.title))
+    .filter((releaseGroup) => {
+      const key = releaseGroup.id ?? releaseGroup.title ?? "";
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+const getMusicBrainzArtistCredit = (recording: MusicBrainzRecording) =>
+  (recording["artist-credit"] ?? [])
+    .map((credit) => credit.name ?? credit.artist?.name)
+    .filter(Boolean)
+    .join("");
+
+const getMusicBrainzArtistNames = (recording: MusicBrainzRecording) => [
+  ...new Set(
+    (recording["artist-credit"] ?? [])
+      .map((credit) => credit.artist?.name ?? credit.name)
+      .filter((name): name is string => Boolean(name)),
+  ),
+];
+
+const getMusicBrainzArtists = (recording: MusicBrainzRecording): MusicBrainzArtistMetadata[] =>
+  (recording["artist-credit"] ?? [])
+    .map((credit) =>
+      pruneUndefined({
+        id: credit.artist?.id,
+        name: credit.artist?.name ?? credit.name,
+        sortName: credit.artist?.["sort-name"],
+        creditName: credit.name,
+      }) as MusicBrainzArtistMetadata,
+    )
+    .filter((artist) => Boolean(artist.id ?? artist.name));
+
+const createMusicBrainzEntryMetadata = (lookup: MusicBrainzReleaseLookup): { [key: string]: GuessValue | undefined } =>
+  pruneUndefined({
+    recordingId: lookup.recordingId,
+    recordingTitle: lookup.recordingTitle,
+    recordingLengthMs: lookup.recordingLengthMs,
+    artistCredit: lookup.artistCredit,
+    artists: lookup.artists,
+    artistNames: lookup.artistNames,
+    isrcs: lookup.isrcs,
+    earliestReleaseDate: lookup.date,
+    earliestReleaseYear: lookup.year,
+    earliestRelease: lookup.earliestRelease,
+    releaseGroups: lookup.releaseGroups,
+    releases: lookup.releases,
+  }) as { [key: string]: GuessValue | undefined };
+
+const pruneUndefined = <T extends Record<string, unknown>>(value: T) =>
+  Object.fromEntries(Object.entries(value).filter(([, entryValue]) => entryValue !== undefined));
+
+const musicBrainzRecordingMatches = (recording: MusicBrainzRecording, title: string, artists: string) => {
+  const recordingTitle = normalizeMatchText(recording.title ?? "");
+  const expectedTitle = normalizeMatchText(title);
+  const recordingArtists = normalizeMatchText(
+    (recording["artist-credit"] ?? [])
+      .map((credit) => credit.artist?.name ?? credit.name)
+      .filter(Boolean)
+      .join(" "),
+  );
+  const expectedArtists = normalizeMatchText(artists);
+  const titleMatches =
+    recordingTitle === expectedTitle ||
+    recordingTitle.includes(expectedTitle) ||
+    expectedTitle.includes(recordingTitle) ||
+    shareEnoughWords(recordingTitle, expectedTitle);
+  const artistMatches =
+    !recordingArtists ||
+    recordingArtists.includes(expectedArtists) ||
+    expectedArtists.includes(recordingArtists) ||
+    shareEnoughWords(recordingArtists, expectedArtists);
+  return titleMatches && artistMatches;
+};
+
+const fetchMusicBrainz = async <T,>(path: string): Promise<T> => {
+  await waitForMusicBrainzSlot();
+  return fetchJson<T>(`${MUSICBRAINZ_API_URL}${path}`);
+};
+
+const waitForMusicBrainzSlot = () => {
+  const next = musicBrainzQueue.then(async () => {
+    const waitMs = Math.max(0, musicBrainzLastRequestAt + MUSICBRAINZ_REQUEST_INTERVAL_MS - Date.now());
+    if (waitMs > 0) await new Promise((resolve) => window.setTimeout(resolve, waitMs));
+    musicBrainzLastRequestAt = Date.now();
+  });
+  musicBrainzQueue = next.catch(() => undefined);
+  return next;
+};
+
+const readMusicBrainzCache = () => {
+  try {
+    return JSON.parse(window.localStorage.getItem(MUSICBRAINZ_CACHE_KEY) ?? "{}") as Record<string, MusicBrainzReleaseLookup>;
+  } catch {
+    return {};
+  }
+};
+
+const writeMusicBrainzCache = (key: string, value: MusicBrainzReleaseLookup) => {
+  try {
+    const cache = readMusicBrainzCache();
+    cache[key] = value;
+    window.localStorage.setItem(MUSICBRAINZ_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Cache failures should never block Spotify card generation.
+  }
+};
+
+const normalizeMusicDate = (value?: string) => {
+  const match = value?.match(/^\d{4}(?:-\d{2})?(?:-\d{2})?/);
+  return match?.[0];
+};
+
+const parseMusicYear = (value?: string) => {
+  const year = Number(value?.slice(0, 4));
+  return Number.isFinite(year) && year > 1800 ? year : undefined;
+};
+
+const compareMusicDates = (left: string, right: string) => musicDateSortKey(left).localeCompare(musicDateSortKey(right));
+
+const musicDateSortKey = (value: string) => {
+  const [year = "9999", month = "00", day = "00"] = value.split("-");
+  return `${year.padStart(4, "9")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+};
+
+const escapeMusicBrainzQuery = (value: string) => value.replace(/[\\"]/g, " ").trim();
 
 const loadSpotifyPlaybackSdk = () =>
   new Promise<void>((resolve, reject) => {
